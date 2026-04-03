@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  CAMPAIGN_ADMIN
+  LEADER
+}
+
+enum VotingIntention {
+  YES
+  NO
+  MAYBE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdCampaigns Campaign[]       @relation("CampaignCreator")
+  leaderProfiles   LeaderProfile[]
+  campaignAdmins     CampaignAdmin[]
+  auditLogs          AuditLog[]
+}
+
+/// Campaña electoral (multi-tenant).
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  slogan      String?
+  description String?
+  /// Contexto extra (máx. 2000 chars en validación de app) para prompts de IA.
+  aiContext   String?  @db.Text
+  maxLeaders  Int
+  photoUrl    String?
+  creatorId   String?
+  creator     User?    @relation("CampaignCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions Question[]
+  leaders   LeaderProfile[]
+  voters    Voter[]
+  missions  Mission[]
+  admins    CampaignAdmin[]
+}
+
+/// Administradores de campaña (muchos usuarios ↔ muchas campañas).
+model CampaignAdmin {
+  id         String   @id @default(cuid())
+  userId     String
+  campaignId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, campaignId])
+  @@index([campaignId])
+}
+
+model LeaderProfile {
+  id             String   @id @default(cuid())
+  userId         String
+  campaignId     String
+  uniqueUrlToken String   @unique
+  photoUrl       String?
+  /// JSON o texto libre con datos del líder (nombre público, etc.).
+  personalInfo   String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  voters       Voter[]
+  missionAcks  MissionAck[]
+
+  @@unique([userId, campaignId])
+  @@index([campaignId])
+}
+
+model Question {
+  id             String   @id @default(cuid())
+  campaignId     String
+  questionText   String     @db.Text
+  officialAnswer String     @db.Text
+  /// Información adicional para Gemini (máx. 2000 chars en app).
+  geminiContext  String?    @db.Text
+  sortOrder      Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+}
+
+model Voter {
+  id              String          @id @default(cuid())
+  leaderId        String
+  campaignId      String
+  name            String
+  phone           String
+  neighborhood    String
+  votingIntention VotingIntention
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  leader        LeaderProfile @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  campaign      Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  interactions  Interaction[]
+
+  @@index([leaderId])
+  @@index([campaignId])
+}
+
+model Interaction {
+  id            String   @id @default(cuid())
+  voterId       String
+  chatLog       Json
+  affinityScore Float?
+  sentiment     String?
+  createdAt     DateTime @default(now())
+
+  voter Voter @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@index([voterId])
+}
+
+model Mission {
+  id          String   @id @default(cuid())
+  campaignId  String
+  title       String
+  messageBody String   @db.Text
+  createdAt   DateTime @default(now())
+
+  campaign Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  acks     MissionAck[]
+
+  @@index([campaignId])
+}
+
+/// Registro de que un líder vio/aceptó una misión (para métricas y UX).
+model MissionAck {
+  id               String   @id @default(cuid())
+  missionId        String
+  leaderProfileId  String
+  acknowledgedAt   DateTime @default(now())
+
+  mission Mission       @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  leader  LeaderProfile @relation(fields: [leaderProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([missionId, leaderProfileId])
+  @@index([leaderProfileId])
+}
+
+/// Auditoría de acciones sensibles (CRUD, login admin, etc.).
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  email      String?
+  action     String
+  entity     String?
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}
