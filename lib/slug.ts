@@ -1,5 +1,13 @@
+/**
+ * Slugs únicos para campañas (URL y rutas públicas del funnel).
+ * @packageDocumentation
+ */
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Normaliza texto a slug ASCII (minúsculas, sin acentos, guiones).
+ * @param input - Nombre u otro texto fuente.
+ */
 export function slugify(input: string): string {
   const s = input
     .toLowerCase()
@@ -11,6 +19,10 @@ export function slugify(input: string): string {
   return s || "campana";
 }
 
+/**
+ * Genera un slug no colisionante con `Campaign.slug` existentes.
+ * @param baseName - Típicamente el nombre de la campaña.
+ */
 export async function ensureUniqueCampaignSlug(baseName: string): Promise<string> {
   let slug = slugify(baseName);
   let n = 0;

@@ -1,8 +1,12 @@
+/**
+ * Resolución de API key y modelo Google Generative AI para el AI SDK (solo servidor).
+ * @packageDocumentation
+ */
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 /**
- * Clave de API (solo servidor). Orden de preferencia alineado con documentación de Google AI y curl.
- * En curl usas: `-H 'X-goog-api-key: TU_CLAVE'` → misma clave aquí.
+ * Lee la clave desde variables de entorno (varias aliases soportadas).
+ * @returns Clave recortada o `undefined` si falta/vacía.
  */
 export function getGeminiApiKey(): string | undefined {
   const raw =
@@ -15,6 +19,10 @@ export function getGeminiApiKey(): string | undefined {
   return key.length ? key : undefined;
 }
 
+/**
+ * @returns Clave API garantizada no vacía.
+ * @throws {Error} Si no hay ninguna variable de entorno configurada.
+ */
 export function requireGeminiApiKey(): string {
   const key = getGeminiApiKey();
   if (!key) {
@@ -25,11 +33,18 @@ export function requireGeminiApiKey(): string {
   return key;
 }
 
-/** Mismo id que en REST: `.../models/gemini-flash-latest:generateContent` */
+/**
+ * Identificador del modelo (mismo que en la URL REST de Google AI).
+ * @default gemini-flash-latest
+ */
 export function getGeminiModelId(): string {
   return (process.env.GEMINI_MODEL ?? "gemini-flash-latest").trim() || "gemini-flash-latest";
 }
 
+/**
+ * Instancia del modelo listo para `streamText` / `generateObject` del paquete `ai`.
+ * @param modelId - Opcional; por defecto {@link getGeminiModelId}.
+ */
 export function getGeminiModel(modelId?: string) {
   const id = modelId ?? getGeminiModelId();
   const apiKey = requireGeminiApiKey();

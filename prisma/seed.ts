@@ -1,5 +1,11 @@
+/**
+ * Datos de desarrollo: usuarios demo, campaña demo, preguntas, misión, líder con token fijo.
+ * Al final asigna coordenadas de prueba en Colombia a votantes sin `latitude`/`longitude`.
+ * Ejecutar con `npm run db:seed`.
+ */
 import { PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { COLOMBIA_CITY_SAMPLES, jitterCoord } from "@/lib/colombia-geo-samples";
 
 const prisma = new PrismaClient();
 
@@ -123,6 +129,24 @@ async function main() {
           "¡Hola! Participa en nuestra encuesta ciudadana. Tu opinión cuenta para el barrio. (Añade aquí tu enlace personal desde el panel de líder.)",
       },
     });
+  }
+
+  const votersSinGeo = await prisma.voter.findMany({
+    where: { OR: [{ latitude: null }, { longitude: null }] },
+    select: { id: true },
+  });
+  for (let i = 0; i < votersSinGeo.length; i++) {
+    const city = COLOMBIA_CITY_SAMPLES[i % COLOMBIA_CITY_SAMPLES.length];
+    const { lat, lng } = jitterCoord(city.lat, city.lng);
+    await prisma.voter.update({
+      where: { id: votersSinGeo[i].id },
+      data: { latitude: lat, longitude: lng },
+    });
+  }
+  if (votersSinGeo.length > 0) {
+    console.log(
+      `Geolocalización de prueba (Colombia, ciudades repartidas): ${votersSinGeo.length} votante(s) sin coordenadas actualizado(s).`,
+    );
   }
 
   console.log(`Semilla OK: super@eco.local, admin@eco.local, lider@eco.local (misma contraseña por defecto).`);

@@ -10,6 +10,7 @@ type Campaign = {
   slogan: string | null;
   description: string | null;
   aiContext: string | null;
+  closingCtaText: string | null;
   maxLeaders: number;
 };
 
@@ -54,6 +55,20 @@ export function CampaignEditForm({ campaign }: { campaign: Campaign }) {
           maxLength={2000}
           rows={4}
           defaultValue={campaign.aiContext ?? ""}
+          className="w-full max-w-xl rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+        />
+      </div>
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Mensaje final del funnel (opcional)</label>
+        <p className="text-xs text-[var(--muted)]">
+          Se muestra al ciudadano después de la conclusión IA (enlaces, web, más información).
+        </p>
+        <textarea
+          name="closingCtaText"
+          maxLength={8000}
+          rows={4}
+          defaultValue={campaign.closingCtaText ?? ""}
+          placeholder="Ej.: Más información: https://..."
           className="w-full max-w-xl rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
         />
       </div>

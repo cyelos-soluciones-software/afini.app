@@ -1,9 +1,13 @@
+/**
+ * Limitación de peticiones al endpoint del funnel (`/api/funnel/stream`).
+ * Usa Upstash Redis si `UPSTASH_REDIS_REST_*` están definidas; si no, contador en memoria por IP (no compartido entre instancias).
+ * @packageDocumentation
+ */
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 /**
- * Rate limit del funnel: en memoria (MVP) o Upstash Redis si hay variables de entorno.
- * En varias instancias sin Redis, cada nodo tiene su propio contador.
+ * Ventana y cupo por IP (aprox.) para el funnel.
  */
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 25;
@@ -11,6 +15,7 @@ const buckets = new Map<string, { count: number; resetAt: number }>();
 
 let upstashLimiter: Ratelimit | null = null;
 
+/** Construye el limitador Redis una sola vez (lazy). */
 function getUpstashLimiter(): Ratelimit | null {
   if (upstashLimiter) return upstashLimiter;
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -25,12 +30,14 @@ function getUpstashLimiter(): Ratelimit | null {
   return upstashLimiter;
 }
 
+/** Clave de cliente: primera IP de `x-forwarded-for` o `x-real-ip`. */
 function clientKey(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]?.trim() ?? "unknown";
   return req.headers.get("x-real-ip") ?? "unknown";
 }
 
+/** Sliding window en memoria por clave `funnel:<ip>`. */
 function memoryCheck(req: Request): { ok: true } | { ok: false; retryAfterSec: number } {
   const key = `funnel:${clientKey(req)}`;
   const now = Date.now();
@@ -46,6 +53,11 @@ function memoryCheck(req: Request): { ok: true } | { ok: false; retryAfterSec: n
   return { ok: true };
 }
 
+/**
+ * Evalúa si la petición al funnel debe aceptarse.
+ * @param req - Request HTTP entrante.
+ * @returns `ok: true` si hay cupo; si no, `retryAfterSec` sugerido para cabecera `Retry-After`.
+ */
 export async function checkFunnelRateLimit(
   req: Request,
 ): Promise<{ ok: true } | { ok: false; retryAfterSec: number }> {

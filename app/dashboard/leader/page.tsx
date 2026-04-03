@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { ackMissionAction, getLeaderDashboard } from "@/app/actions/leader";
+import { CampaignShareButtons } from "@/app/components/campaign-share-buttons";
 import { getPublicBaseUrl } from "@/lib/app-url";
+import { leaderShareText } from "@/lib/social-share";
 
 export default async function LeaderDashboardPage() {
   const data = await getLeaderDashboard();
@@ -11,8 +13,7 @@ export default async function LeaderDashboardPage() {
   const { profile, missions } = data;
   const base = getPublicBaseUrl();
   const funnelUrl = `${base}/c/${profile.campaign.slug}/${profile.uniqueUrlToken}`;
-  const shareText = `¡Participa en ${profile.campaign.name}! ${funnelUrl}`;
-  const waMeShare = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  const shareText = leaderShareText(profile.campaign.name, funnelUrl);
 
   return (
     <div className="space-y-10">
@@ -29,18 +30,13 @@ export default async function LeaderDashboardPage() {
 
       <section className="space-y-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
         <h2 className="text-lg font-medium text-[var(--foreground)]">Compartir campaña</h2>
-        <p className="text-sm text-[var(--muted)]">Copia el enlace o abre WhatsApp con un mensaje prefabricado.</p>
-        <div className="break-all rounded-lg bg-[var(--background)] px-3 py-2 font-mono text-xs text-[var(--foreground)]">{funnelUrl}</div>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={waMeShare}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95"
-          >
-            Compartir en WhatsApp
-          </a>
+        <p className="text-sm text-[var(--muted)]">
+          Copia el enlace o compártelo en redes. El mensaje incluye el nombre de la campaña y tu enlace de referido.
+        </p>
+        <div className="break-all rounded-lg bg-[var(--background)] px-3 py-2 font-mono text-xs text-[var(--foreground)]">
+          {funnelUrl}
         </div>
+        <CampaignShareButtons funnelUrl={funnelUrl} shareText={shareText} />
       </section>
 
       <section className="space-y-4">

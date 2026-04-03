@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CampaignCharts } from "@/app/components/campaign-charts";
 import { deleteQuestionAction, getCampaignAnalytics, getCampaignDetail } from "@/app/actions/campaign-manager";
-import { NewLeaderForm, NewMissionForm, NewQuestionForm } from "./campaign-forms";
+import { ClosingCtaForm, NewLeaderForm, NewMissionForm, NewQuestionForm } from "./campaign-forms";
 
 export default async function CampaignManagePage({ params }: { params: Promise<{ campaignId: string }> }) {
   const { campaignId } = await params;
@@ -21,6 +21,20 @@ export default async function CampaignManagePage({ params }: { params: Promise<{
         <p className="text-sm text-[var(--muted)]">
           Slug: <code className="rounded bg-[var(--border)] px-1">{campaign.slug}</code> · Líderes: {campaign._count.leaders} /{" "}
           {campaign.maxLeaders} · Votantes: {campaign._count.voters}
+        </p>
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+          <Link
+            href={`/dashboard/campaign-admin/${campaignId}/respuestas`}
+            className="text-sm font-medium text-[var(--primary)] hover:underline"
+          >
+            Ver respuestas de participantes (sin datos de contacto) →
+          </Link>
+          <Link
+            href={`/dashboard/campaign-admin/${campaignId}/mapa`}
+            className="text-sm font-medium text-[var(--primary)] hover:underline"
+          >
+            Mapa de calor (intención de voto) →
+          </Link>
         </p>
       </div>
 
@@ -74,6 +88,14 @@ export default async function CampaignManagePage({ params }: { params: Promise<{
           ))}
         </ul>
         <NewLeaderForm campaignId={campaignId} />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium text-[var(--foreground)]">Experiencia al cerrar el funnel</h2>
+        <p className="text-sm text-[var(--muted)]">
+          Mensaje mostrado al ciudadano después de la conclusión IA (antes de compartir en redes).
+        </p>
+        <ClosingCtaForm campaignId={campaignId} defaultClosingCtaText={campaign.closingCtaText} />
       </section>
 
       <section className="space-y-4">

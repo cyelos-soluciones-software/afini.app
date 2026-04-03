@@ -1,10 +1,15 @@
 "use server";
 
+/**
+ * Panel del líder digital: campaña asociada, misiones y acuse de recibo.
+ * @module app/actions/leader
+ */
 import { revalidatePath } from "next/cache";
 import { writeAuditLog } from "@/lib/audit";
 import { requireRole } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 
+/** Perfil del líder, campaña y misiones recientes con estado de ack. */
 export async function getLeaderDashboard() {
   const session = await requireRole("LEADER");
   const profile = await prisma.leaderProfile.findFirst({
@@ -31,6 +36,10 @@ export async function getLeaderDashboard() {
   return { profile, missions };
 }
 
+/**
+ * Marca una misión como reconocida por el líder actual.
+ * @throws {Error} Si no hay perfil o la misión no pertenece a su campaña.
+ */
 export async function ackMissionAction(missionId: string) {
   const session = await requireRole("LEADER");
   const profile = await prisma.leaderProfile.findFirst({

@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Eco Cyelos (`eco.cyelos.com`)
 
-## Getting Started
+Plataforma Next.js para **campañas ciudadanas**: funnel con IA (Gemini), registro de votantes con geolocalización opcional, paneles por rol y mapas de calor por intención de voto.
 
-First, run the development server:
+## Documentación para desarrollo y Cursor
+
+| Documento | Contenido |
+|-----------|-----------|
+| [**AGENTS.md**](./AGENTS.md) | Contexto del proyecto, stack, carpetas, convenciones — **léelo primero en Cursor**. |
+| [**docs/ARCHITECTURE.md**](./docs/ARCHITECTURE.md) | Modelo de datos, APIs, flujos funnel y dashboard. |
+| [**docs/README.md**](./docs/README.md) | Índice de esta carpeta. |
+
+## Requisitos
+
+- Node.js 20+
+- PostgreSQL (local o remoto)
+
+## Configuración rápida
 
 ```bash
+cp .env.example .env
+# Edita .env: DATABASE_URL, AUTH_SECRET, clave Gemini (ver .env.example)
+
+npm install
+npx prisma migrate dev
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000). Usuarios de prueba tras el seed (contraseña por defecto en `DEV_SEED_PASSWORD`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `super@eco.local` — súper administrador  
+- `admin@eco.local` — administrador de la campaña demo  
+- `lider@eco.local` — líder digital (funnel: `/c/demo/demo-token-1`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts npm
 
-## Learn More
+| Script | Descripción |
+|--------|-------------|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run start` | Servidor producción |
+| `npm run lint` | ESLint |
+| `npm run db:generate` | `prisma generate` |
+| `npm run db:migrate` | `prisma migrate dev` |
+| `npm run db:seed` | Semilla + coordenadas de prueba (Colombia) en votantes sin geo |
+| `npm run db:studio` | Prisma Studio |
 
-To learn more about Next.js, take a look at the following resources:
+## Tecnologías principales
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Next.js 16 · React 19 · Prisma · NextAuth · Vercel AI SDK (Google Gemini) · Leaflet / OpenStreetMap · libphonenumber-js
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Licencia y despliegue
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Proyecto privado. En producción: definir `NEXT_PUBLIC_APP_URL`, HTTPS, y variables de `.env.example`.

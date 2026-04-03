@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getPublicBaseUrl } from "@/lib/app-url";
+import { citizenShareText } from "@/lib/social-share";
 import { FunnelClient } from "./funnel-client";
 
 export default async function FunnelPage({
@@ -35,10 +37,17 @@ export default async function FunnelPage({
     );
   }
 
+  const base = getPublicBaseUrl();
+  const funnelUrl = `${base}/c/${campaignSlug}/${leaderToken}`;
+  const citizenShare = citizenShareText(leader.campaign.name, funnelUrl);
+
   return (
     <FunnelClient
       campaignSlug={campaignSlug}
       leaderToken={leaderToken}
+      funnelUrl={funnelUrl}
+      citizenShareText={citizenShare}
+      closingCtaText={leader.campaign.closingCtaText}
       campaign={{
         name: leader.campaign.name,
         slogan: leader.campaign.slogan,

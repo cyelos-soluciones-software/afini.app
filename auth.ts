@@ -1,3 +1,9 @@
+/**
+ * Autenticación NextAuth v5: sesión JWT, inicio de sesión por correo y contraseña (hash bcrypt en `User`).
+ * La sesión expone `user.id`, `user.email` y `user.role` (`UserRole` de Prisma).
+ *
+ * @see {@link https://authjs.dev/}
+ */
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";

@@ -1,5 +1,6 @@
 /**
- * URL pública de la app (para wa.me y enlaces). En local: http://localhost:3000
+ * Base URL pública para compartir enlaces (WhatsApp, etc.).
+ * @returns `NEXT_PUBLIC_APP_URL`, o `https://` + `VERCEL_URL`, o `http://localhost:3000`.
  */
 export function getPublicBaseUrl(): string {
   const env = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL;

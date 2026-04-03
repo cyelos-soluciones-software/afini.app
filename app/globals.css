@@ -1,4 +1,92 @@
 @import "tailwindcss";
+@import "react-phone-number-input/style.css";
+
+.PhoneInput {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.PhoneInputCountry {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+/* width:100% en el input rompe el flex (empuja salto de línea y estira el bloque país). */
+.PhoneInputInput {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: auto !important;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+}
+.PhoneInputInput:focus {
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+/* Funnel: bandera acotada y campo de número siempre visible en una fila */
+.funnel-phone-input .PhoneInputCountry {
+  align-self: center !important;
+}
+.funnel-phone-input .PhoneInputCountryIcon,
+.funnel-phone-input .PhoneInputCountryIcon--border {
+  width: 1.875rem !important;
+  height: 1.25rem !important;
+  min-width: 1.875rem !important;
+  min-height: 1.25rem !important;
+  max-width: 1.875rem !important;
+  max-height: 1.25rem !important;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.funnel-phone-input .PhoneInputCountryIconImg {
+  object-fit: cover;
+}
+.funnel-phone-input .PhoneInputInput {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+.funnel-phone-input .PhoneInputInput:focus {
+  box-shadow: none !important;
+}
+.funnel-phone-input:focus-within {
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+@keyframes funnel-indeterminate-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.funnel-stream-bar-track {
+  position: relative;
+  height: 0.35rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--border);
+}
+
+.funnel-stream-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 35%;
+  border-radius: 9999px;
+  background: var(--primary);
+  animation: funnel-indeterminate-bar 1.25s ease-in-out infinite;
+}
 
 /* Tema inspirado en Cyelos: profundidad slate + acento cyan */
 :root {

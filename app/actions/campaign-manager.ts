@@ -1,14 +1,25 @@
 "use server";
 
+/**
+ * Administración operativa de campaña: preguntas, misiones, líderes, analíticas, mapa de calor y CTA de cierre.
+ * Usa {@link hasCampaignAccess} salvo funciones que solo listan según rol.
+ * @module app/actions/campaign-manager
+ */
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
-import { hasCampaignAccess } from "@/lib/authz";
+import { canViewCampaignHeatmap, hasCampaignAccess } from "@/lib/authz";
 import type { DashboardActionState } from "@/lib/dashboard-form-state";
+import { leaderDisplayLabel } from "@/lib/leader-display";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Obtiene sesión y valida acceso a la campaña.
+ * @internal
+ * @throws {Error} `No autorizado` o `Sin acceso a esta campaña`.
+ */
 async function requireCampaignContext(campaignId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("No autorizado");
@@ -17,10 +28,12 @@ async function requireCampaignContext(campaignId: string) {
   return session;
 }
 
+/** Lanza si el usuario no puede acceder a la campaña (útil en Server Components). */
 export async function assertCampaignAccess(campaignId: string): Promise<void> {
   await requireCampaignContext(campaignId);
 }
 
+/** Metadatos mínimos de campaña si hay acceso; útil para títulos de página. */
 export async function getCampaignNameIfAllowed(campaignId: string) {
   await assertCampaignAccess(campaignId);
   return prisma.campaign.findUnique({
@@ -29,6 +42,7 @@ export async function getCampaignNameIfAllowed(campaignId: string) {
   });
 }
 
+/** Campañas visibles en el selector: todas para súper admin, asignadas para admin de campaña. */
 export async function listAccessibleCampaigns() {
   const session = await auth();
   if (!session?.user?.id) return [];
@@ -51,6 +65,7 @@ export async function listAccessibleCampaigns() {
   return [];
 }
 
+/** Ficha completa: preguntas, misiones, líderes y conteos. */
 export async function getCampaignDetail(campaignId: string) {
   await requireCampaignContext(campaignId);
   return prisma.campaign.findUnique({
@@ -69,6 +84,7 @@ export async function getCampaignDetail(campaignId: string) {
   });
 }
 
+/** Añade una pregunta del funnel con respuesta oficial y contexto opcional para IA. */
 export async function createQuestionAction(
   campaignId: string,
   _prevState: DashboardActionState,
@@ -111,6 +127,7 @@ export async function createQuestionAction(
   return { error: null };
 }
 
+/** Elimina pregunta si pertenece a la campaña. */
 export async function deleteQuestionAction(campaignId: string, questionId: string) {
   const session = await requireCampaignContext(campaignId);
   await prisma.question.deleteMany({
@@ -126,6 +143,7 @@ export async function deleteQuestionAction(campaignId: string, questionId: strin
   revalidatePath(`/dashboard/campaign-admin/${campaignId}`);
 }
 
+/** Crea misión de difusión visible para líderes de la campaña. */
 export async function createMissionAction(
   campaignId: string,
   _prevState: DashboardActionState,
@@ -156,6 +174,10 @@ export async function createMissionAction(
   return { error: null };
 }
 
+/**
+ * Alta de usuario `LEADER` y `LeaderProfile` con token de URL único.
+ * @returns Error si correo duplicado o se supera `maxLeaders`.
+ */
 export async function createLeaderAction(
   campaignId: string,
   _prevState: DashboardActionState,
@@ -222,6 +244,7 @@ export async function createLeaderAction(
 /** Orden fijo para informes (Sí → Tal vez → No). */
 const INTENTION_ORDER = ["YES", "MAYBE", "NO"] as const;
 
+/** @internal */
 function intentionLabel(key: string): string {
   if (key === "YES") return "Sí";
   if (key === "NO") return "No";
@@ -232,6 +255,7 @@ function intentionLabel(key: string): string {
 /** Orden fijo sentimiento IA (clasificación en funnel). */
 const SENTIMENT_ORDER = ["positive", "neutral", "negative"] as const;
 
+/** @internal */
 function sentimentLabel(key: string): string {
   if (key === "positive") return "Positivo";
   if (key === "neutral") return "Neutral";
@@ -239,21 +263,7 @@ function sentimentLabel(key: string): string {
   return key;
 }
 
-function leaderDisplayName(l: {
-  user: { email: string };
-  personalInfo: string | null;
-}): string {
-  if (l.personalInfo) {
-    try {
-      const o = JSON.parse(l.personalInfo) as { displayName?: string };
-      if (o.displayName?.trim()) return o.displayName.trim();
-    } catch {
-      /* ignore */
-    }
-  }
-  return l.user.email;
-}
-
+/** Agregados para gráficos del dashboard de campaña. */
 export type CampaignAnalytics = {
   totals: {
     voters: number;
@@ -269,6 +279,7 @@ export type CampaignAnalytics = {
   affinityAvg: number | null;
 };
 
+/** Consultas agregadas Prisma para Recharts (intención, barrio, líder, sentimiento, afinidad). */
 export async function getCampaignAnalytics(campaignId: string): Promise<CampaignAnalytics> {
   await requireCampaignContext(campaignId);
 
@@ -334,7 +345,7 @@ export async function getCampaignAnalytics(campaignId: string): Promise<Campaign
     .map((l) => {
       const count = l._count.voters;
       const sharePct = total > 0 ? Math.round((count / total) * 1000) / 10 : 0;
-      return { name: leaderDisplayName(l), count, sharePct };
+      return { name: leaderDisplayLabel(l.personalInfo, l.user.email), count, sharePct };
     })
     .sort((a, b) => b.count - a.count);
 
@@ -368,4 +379,109 @@ export async function getCampaignAnalytics(campaignId: string): Promise<Campaign
     sentiment,
     affinityAvg,
   };
+}
+
+/** Punto WGS84 para capas Leaflet. */
+export type HeatmapGeoPoint = { lat: number; lng: number };
+
+/**
+ * Puntos agrupados por intención de voto para el mapa de calor.
+ * @returns `null` si el usuario no tiene permiso ({@link canViewCampaignHeatmap}) o la campaña no existe.
+ */
+export async function getCampaignHeatmapData(campaignId: string): Promise<null | {
+  campaignName: string;
+  yes: HeatmapGeoPoint[];
+  no: HeatmapGeoPoint[];
+  maybe: HeatmapGeoPoint[];
+  stats: {
+    yes: number;
+    no: number;
+    maybe: number;
+    withGeo: number;
+    withoutGeo: number;
+  };
+}> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const allowed = await canViewCampaignHeatmap(session.user.id, session.user.role, campaignId);
+  if (!allowed) return null;
+
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: { name: true },
+  });
+  if (!campaign) return null;
+
+  const [votersWithGeo, withoutGeo] = await Promise.all([
+    prisma.voter.findMany({
+      where: {
+        campaignId,
+        latitude: { not: null },
+        longitude: { not: null },
+      },
+      select: {
+        latitude: true,
+        longitude: true,
+        votingIntention: true,
+      },
+    }),
+    prisma.voter.count({
+      where: {
+        campaignId,
+        OR: [{ latitude: null }, { longitude: null }],
+      },
+    }),
+  ]);
+
+  const yes: HeatmapGeoPoint[] = [];
+  const no: HeatmapGeoPoint[] = [];
+  const maybe: HeatmapGeoPoint[] = [];
+
+  for (const v of votersWithGeo) {
+    if (v.latitude == null || v.longitude == null) continue;
+    const p = { lat: v.latitude, lng: v.longitude };
+    if (v.votingIntention === "YES") yes.push(p);
+    else if (v.votingIntention === "NO") no.push(p);
+    else maybe.push(p);
+  }
+
+  return {
+    campaignName: campaign.name,
+    yes,
+    no,
+    maybe,
+    stats: {
+      yes: yes.length,
+      no: no.length,
+      maybe: maybe.length,
+      withGeo: votersWithGeo.length,
+      withoutGeo,
+    },
+  };
+}
+
+/** Texto opcional mostrado al ciudadano al finalizar el funnel (desde panel admin de campaña). */
+export async function updateCampaignClosingCtaAction(
+  campaignId: string,
+  _prevState: DashboardActionState,
+  formData: FormData,
+): Promise<DashboardActionState> {
+  const session = await requireCampaignContext(campaignId);
+  const closingCtaText = String(formData.get("closingCtaText") ?? "").trim().slice(0, 8000) || null;
+
+  await prisma.campaign.update({
+    where: { id: campaignId },
+    data: { closingCtaText },
+  });
+
+  await writeAuditLog({
+    userId: session.user.id,
+    email: session.user.email,
+    action: "campaign_closing_cta_update",
+    entity: "Campaign",
+    entityId: campaignId,
+  });
+
+  revalidatePath(`/dashboard/campaign-admin/${campaignId}`);
+  return { error: null };
 }

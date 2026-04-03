@@ -42,6 +42,8 @@ model Campaign {
   description String?
   /// Contexto extra (máx. 2000 chars en validación de app) para prompts de IA.
   aiContext   String?  @db.Text
+  /// Texto opcional tras la conclusión del funnel (enlaces, web, más información).
+  closingCtaText String? @db.Text
   maxLeaders  Int
   photoUrl    String?
   creatorId   String?
@@ -114,6 +116,9 @@ model Voter {
   phone           String
   neighborhood    String
   votingIntention VotingIntention
+  /// WGS84; null si el ciudadano denegó o el navegador no soporta geolocalización.
+  latitude        Float?
+  longitude       Float?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -123,6 +128,8 @@ model Voter {
 
   @@index([leaderId])
   @@index([campaignId])
+  @@index([campaignId, createdAt])
+  @@unique([campaignId, phone])
 }
 
 model Interaction {

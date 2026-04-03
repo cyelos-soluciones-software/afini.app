@@ -1,5 +1,9 @@
 "use server";
 
+/**
+ * Acciones reservadas al rol `SUPER_ADMIN`: campañas globales y asignación de administradores de campaña.
+ * @module app/actions/super-admin
+ */
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -9,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import type { DashboardActionState } from "@/lib/dashboard-form-state";
 import { ensureUniqueCampaignSlug } from "@/lib/slug";
 
+/** Lista todas las campañas con conteos de líderes y votantes. */
 export async function listAllCampaigns() {
   await requireRole("SUPER_ADMIN");
   return prisma.campaign.findMany({
@@ -19,6 +24,7 @@ export async function listAllCampaigns() {
   });
 }
 
+/** Detalle de campaña incluyendo administradores asignados. */
 export async function getCampaignForSuperAdmin(campaignId: string) {
   await requireRole("SUPER_ADMIN");
   return prisma.campaign.findUnique({
@@ -29,6 +35,10 @@ export async function getCampaignForSuperAdmin(campaignId: string) {
   });
 }
 
+/**
+ * Crea campaña con slug único y redirige a su ficha en super-admin.
+ * @remarks Ejecuta `redirect` tras éxito (no retorna al llamador en ese caso).
+ */
 export async function createCampaignAction(
   _prevState: DashboardActionState,
   formData: FormData,
@@ -71,6 +81,7 @@ export async function createCampaignAction(
   redirect(`/dashboard/super-admin/campaigns/${c.id}`);
 }
 
+/** Actualiza metadatos de campaña visibles en super-admin y panel de campaña. */
 export async function updateCampaignAction(
   campaignId: string,
   _prevState: DashboardActionState,
@@ -81,13 +92,14 @@ export async function updateCampaignAction(
   const slogan = String(formData.get("slogan") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
   const aiContext = String(formData.get("aiContext") ?? "").trim().slice(0, 2000) || null;
+  const closingCtaText = String(formData.get("closingCtaText") ?? "").trim().slice(0, 8000) || null;
   const maxLeaders = Math.max(1, Math.min(5000, Number(formData.get("maxLeaders") ?? 20)));
 
   if (!name) return { error: "El nombre de la campaña es obligatorio." };
 
   await prisma.campaign.update({
     where: { id: campaignId },
-    data: { name, slogan, description, aiContext, maxLeaders },
+    data: { name, slogan, description, aiContext, closingCtaText, maxLeaders },
   });
 
   await writeAuditLog({
@@ -104,6 +116,10 @@ export async function updateCampaignAction(
   return { error: null };
 }
 
+/**
+ * Vincula un usuario `CAMPAIGN_ADMIN` a la campaña (crea usuario si no existe).
+ * @returns Estado de error descriptivo si el correo ya tiene rol incompatible.
+ */
 export async function assignCampaignAdminAction(
   campaignId: string,
   _prevState: DashboardActionState,

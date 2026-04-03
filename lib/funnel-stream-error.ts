@@ -1,4 +1,8 @@
-/** Mensaje legible cuando falla fetch del stream (p. ej. JSON en el cuerpo del error). */
+/**
+ * Extrae un mensaje legible del error de `useCompletion` / fetch del stream del funnel.
+ * @param err - Error típico del SDK con `message` que puede ser JSON serializado.
+ * @returns Texto para mostrar al ciudadano (español cuando el backend envía `message`).
+ */
 export function parseFunnelStreamError(err: Error): string {
   const raw = err.message;
   try {

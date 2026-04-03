@@ -36,9 +36,12 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
         </p>
       </section>
 
-      <p className="text-sm">
+      <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <Link href={`/dashboard/campaign-admin/${campaign.id}`} className="font-medium text-[var(--primary)] hover:underline">
           Gestionar preguntas, misiones y líderes →
+        </Link>
+        <Link href={`/dashboard/campaign-admin/${campaign.id}/mapa`} className="font-medium text-[var(--primary)] hover:underline">
+          Mapa de calor (intención de voto) →
         </Link>
       </p>
     </div>
