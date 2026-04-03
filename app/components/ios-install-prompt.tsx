@@ -27,7 +27,7 @@ export function IosInstallPrompt() {
   return (
     <div
       role="status"
-      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm shadow-lg md:left-auto md:right-4 md:max-w-sm"
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-[60] mx-auto max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)]/98 p-4 text-sm shadow-xl backdrop-blur-md md:left-auto md:right-4 md:max-w-sm"
     >
       <p className="font-medium text-[var(--foreground)]">Instalar en iPhone</p>
       <p className="mt-2 text-[var(--muted)]">

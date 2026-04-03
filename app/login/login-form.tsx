@@ -33,7 +33,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm"
+      className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_30px_var(--brand-glow)]"
     >
       <div className="space-y-2">
         <label htmlFor="email" className="block text-sm font-medium text-[var(--foreground)]">
@@ -47,7 +47,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none ring-[var(--primary)] focus:ring-2"
+          className="min-h-[44px] w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none ring-[var(--primary)] focus:ring-2"
         />
       </div>
       <div className="space-y-2">
@@ -62,7 +62,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none ring-[var(--primary)] focus:ring-2"
+          className="min-h-[44px] w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none ring-[var(--primary)] focus:ring-2"
         />
       </div>
       {error ? (
@@ -73,7 +73,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-[var(--primary)] py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+        className="min-h-[48px] w-full rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-[var(--primary-foreground)] shadow-sm transition hover:opacity-92 active:scale-[0.99] disabled:opacity-60"
       >
         {pending ? "Entrando…" : "Entrar"}
       </button>

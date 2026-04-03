@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Gestión de campañas y movilización digital",
     start_url: "/",
     display: "standalone",
-    background_color: "#f8fafc",
-    theme_color: "#0891b2",
+    background_color: "#eef4f8",
+    theme_color: "#007a9a",
     icons: [
       {
         src: "/icon.svg",
