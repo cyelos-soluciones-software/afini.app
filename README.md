@@ -53,3 +53,5 @@ Next.js 16 · React 19 · Prisma · NextAuth · Vercel AI SDK (Google Gemini) ·
 ## Licencia y despliegue
 
 Proyecto privado. En producción (`afini.app`): definir `NEXT_PUBLIC_APP_URL`, HTTPS, y variables de `.env.example`.
+
+Un producto de cyelos.com
