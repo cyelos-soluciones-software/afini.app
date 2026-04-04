@@ -29,8 +29,8 @@ export const metadata: Metadata = {
     "Plataforma para crear y evaluar redes de afinidad: funnel con IA, paneles por rol y PWA en móvil.",
   applicationName: "Afini",
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/logos/Logo-Cyelos.png", type: "image/png" }],
+    icon: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
+    apple: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
