@@ -1,6 +1,6 @@
-# Eco Cyelos (`eco.cyelos.com`)
+# Afini (`afini.app`)
 
-Plataforma Next.js para **campañas ciudadanas**: funnel con IA (Gemini), registro de votantes con geolocalización opcional, paneles por rol y mapas de calor por intención de voto.
+Plataforma Next.js para **crear y evaluar redes de afinidad** en movilización digital: funnel con IA (Gemini), registro de participantes con geolocalización opcional, paneles por rol y mapas de calor por intención de voto.
 
 ## Documentación para desarrollo y Cursor
 
@@ -29,9 +29,9 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000). Usuarios de prueba tras el seed (contraseña por defecto en `DEV_SEED_PASSWORD`):
 
-- `super@eco.local` — súper administrador  
-- `admin@eco.local` — administrador de la campaña demo  
-- `lider@eco.local` — líder digital (funnel: `/c/demo/demo-token-1`)
+- `super@afini.local` — súper administrador  
+- `admin@afini.local` — administrador de la campaña demo  
+- `lider@afini.local` — líder digital (funnel: `/c/demo/demo-token-1`)
 
 ## Scripts npm
 
@@ -52,4 +52,4 @@ Next.js 16 · React 19 · Prisma · NextAuth · Vercel AI SDK (Google Gemini) ·
 
 ## Licencia y despliegue
 
-Proyecto privado. En producción: definir `NEXT_PUBLIC_APP_URL`, HTTPS, y variables de `.env.example`.
+Proyecto privado. En producción (`afini.app`): definir `NEXT_PUBLIC_APP_URL`, HTTPS, y variables de `.env.example`.

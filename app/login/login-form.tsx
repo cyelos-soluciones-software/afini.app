@@ -33,11 +33,11 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_30px_var(--brand-glow)]"
+      className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_32px_var(--brand-glow)]"
     >
       <div className="space-y-2">
         <label htmlFor="email" className="block text-sm font-medium text-[var(--foreground)]">
-          Correo
+          Correo electrónico
         </label>
         <input
           id="email"
@@ -66,14 +66,14 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
         />
       </div>
       {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm font-medium text-[var(--destructive)]" role="alert">
           {error}
         </p>
       ) : null}
       <button
         type="submit"
         disabled={pending}
-        className="min-h-[48px] w-full rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-[var(--primary-foreground)] shadow-sm transition hover:opacity-92 active:scale-[0.99] disabled:opacity-60"
+        className="min-h-[48px] w-full rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-[var(--primary-foreground)] shadow-sm transition hover:brightness-105 active:scale-[0.99] disabled:opacity-60"
       >
         {pending ? "Entrando…" : "Entrar"}
       </button>

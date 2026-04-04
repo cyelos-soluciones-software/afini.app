@@ -25,7 +25,7 @@ function getUpstashLimiter(): Ratelimit | null {
   upstashLimiter = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(MAX_REQUESTS, "1 m"),
-    prefix: "eco:funnel",
+    prefix: "afini:funnel",
   });
   return upstashLimiter;
 }

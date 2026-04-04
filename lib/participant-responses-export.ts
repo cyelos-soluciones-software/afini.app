@@ -60,7 +60,7 @@ export async function buildParticipantResponsesXlsxBuffer(campaignId: string): P
   }
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Eco Cyelos";
+  wb.creator = "Afini";
   const ws = wb.addWorksheet("Respuestas", {
     views: [{ state: "frozen", ySplit: 1 }],
   });

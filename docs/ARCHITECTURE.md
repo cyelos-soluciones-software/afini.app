@@ -1,4 +1,4 @@
-# Arquitectura — Eco Cyelos
+# Arquitectura — Afini (afini.app)
 
 Documento de referencia técnica. Para agentes de IA, priorizar también `AGENTS.md`.
 
@@ -87,7 +87,7 @@ Ruta API export protegida por misma lógica de acceso a campaña (revisar handle
 
 ## 10. Semilla y pruebas locales
 
-`prisma/seed.ts`: usuarios demo (`super@eco.local`, `admin@eco.local`, `lider@eco.local`), campaña demo, preguntas, misión, líder con token fijo. Al final: votantes sin coordenadas reciben puntos aleatorios alrededor de ciudades CO (`lib/colombia-geo-samples.ts`).
+`prisma/seed.ts`: usuarios demo (`super@afini.local`, `admin@afini.local`, `lider@afini.local`), campaña demo, preguntas, misión, líder con token fijo. Al final: votantes sin coordenadas reciben puntos aleatorios alrededor de ciudades CO (`lib/colombia-geo-samples.ts`).
 
 ## 11. Despliegue
 

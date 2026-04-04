@@ -8,15 +8,25 @@ export default async function SuperAdminHomePage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--foreground)]">Super administrador</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">Campañas, límites de líderes y asignación de administradores.</p>
+          <h1 className="font-display text-2xl font-semibold text-[var(--foreground)]">Administración global</h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Campañas, cupos de líderes, administradores de campaña y equipo con acceso total.
+          </p>
         </div>
-        <Link
-          href="/dashboard/super-admin/campaigns/new"
-          className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)]"
-        >
-          Nueva campaña
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/super-admin/super-users"
+            className="min-h-[44px] rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--border)]/40"
+          >
+            Equipo admin
+          </Link>
+          <Link
+            href="/dashboard/super-admin/campaigns/new"
+            className="min-h-[44px] rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-sm transition hover:brightness-105"
+          >
+            Nueva campaña
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--surface)]">

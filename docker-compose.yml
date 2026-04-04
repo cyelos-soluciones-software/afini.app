@@ -1,3 +1,4 @@
+# Postgres local: usuario/base `eco` es solo convención histórica; el producto es Afini (afini.app).
 services:
   db:
     image: postgres:16-alpine

@@ -1,12 +1,12 @@
-# Eco Cyelos — guía para asistentes (Cursor / IA)
+# Afini — guía para asistentes (Cursor / IA)
 
-Lee este archivo al trabajar en el repo. Complementa con `README.md` (arranque) y `docs/ARCHITECTURE.md` (detalle técnico).
+Producto **afini.app**: redes de afinidad y movilización digital. Lee este archivo al trabajar en el repo. Complementa con `README.md` (arranque) y `docs/ARCHITECTURE.md` (detalle técnico).
 
 ## Qué es el proyecto
 
-Aplicación **Next.js (App Router)** para **campañas políticas / movilización ciudadana** en Colombia:
+Aplicación **Next.js (App Router)** para **crear y evaluar redes de afinidad** en campañas y territorio (p. ej. Colombia):
 
-- **Funnel público** por enlace único por líder: `/c/[campaignSlug]/[leaderToken]` — preguntas abiertas, datos de contacto, **Gemini** genera una conclusión personalizada; se persiste **Voter** + **Interaction** (chatLog JSON).
+- **Funnel público** por enlace único por líder: `/c/[campaignSlug]/[leaderToken]` — preguntas abiertas, datos de contacto, **Gemini** genera una conclusión personalizada; se persiste **Voter** + **Interaction** (chatLog JSON, `affinityScore`, `sentiment`).
 - **Dashboard** por roles: **SUPER_ADMIN**, **CAMPAIGN_ADMIN**, **LEADER**.
 - **Mapa de calor** (Leaflet + OSM + `leaflet.heat`) por campaña, intención de voto; acceso solo súper admin y admin de campaña (`canViewCampaignHeatmap`).
 

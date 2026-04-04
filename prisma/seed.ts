@@ -1,5 +1,5 @@
 /**
- * Datos de desarrollo: usuarios demo, campaña demo, preguntas, misión, líder con token fijo.
+ * Datos de desarrollo: usuarios demo (@afini.local), campaña demo, preguntas, misión, líder con token fijo.
  * Al final asigna coordenadas de prueba en Colombia a votantes sin `latitude`/`longitude`.
  * Ejecutar con `npm run db:seed`.
  */
@@ -14,9 +14,9 @@ async function main() {
   const hash = await bcrypt.hash(password, 12);
 
   const superUser = await prisma.user.upsert({
-    where: { email: "super@eco.local" },
+    where: { email: "super@afini.local" },
     create: {
-      email: "super@eco.local",
+      email: "super@afini.local",
       passwordHash: hash,
       role: UserRole.SUPER_ADMIN,
     },
@@ -33,7 +33,7 @@ async function main() {
       slug: "demo",
       slogan: "Juntos por el barrio",
       description:
-        "Demostración del funnel ciudadano. Comparte el enlace con wa.me para movilizar sin API de WhatsApp.",
+        "Demostración del funnel y redes de afinidad. Comparte el enlace con wa.me para movilizar sin API de WhatsApp.",
       aiContext:
         "Prioridades de la campaña: escuchar el territorio, soluciones concretas y diálogo respetuoso. No prometer lo que no depende del candidato.",
       maxLeaders: 20,
@@ -43,7 +43,7 @@ async function main() {
       name: "Campaña Demo",
       slogan: "Juntos por el barrio",
       description:
-        "Demostración del funnel ciudadano. Comparte el enlace con wa.me para movilizar sin API de WhatsApp.",
+        "Demostración del funnel y redes de afinidad. Comparte el enlace con wa.me para movilizar sin API de WhatsApp.",
       aiContext:
         "Prioridades de la campaña: escuchar el territorio, soluciones concretas y diálogo respetuoso. No prometer lo que no depende del candidato.",
     },
@@ -75,9 +75,9 @@ async function main() {
   }
 
   const leaderUser = await prisma.user.upsert({
-    where: { email: "lider@eco.local" },
+    where: { email: "lider@afini.local" },
     create: {
-      email: "lider@eco.local",
+      email: "lider@afini.local",
       passwordHash: hash,
       role: UserRole.LEADER,
     },
@@ -100,9 +100,9 @@ async function main() {
   });
 
   const adminUser = await prisma.user.upsert({
-    where: { email: "admin@eco.local" },
+    where: { email: "admin@afini.local" },
     create: {
-      email: "admin@eco.local",
+      email: "admin@afini.local",
       passwordHash: hash,
       role: UserRole.CAMPAIGN_ADMIN,
     },
@@ -149,7 +149,7 @@ async function main() {
     );
   }
 
-  console.log(`Semilla OK: super@eco.local, admin@eco.local, lider@eco.local (misma contraseña por defecto).`);
+  console.log(`Semilla OK: super@afini.local, admin@afini.local, lider@afini.local (misma contraseña por defecto).`);
   console.log(`Funnel demo: /c/${campaign.slug}/demo-token-1`);
 }
 

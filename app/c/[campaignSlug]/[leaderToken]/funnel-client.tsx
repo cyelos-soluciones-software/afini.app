@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Experiencia del funnel ciudadano: preguntas, registro, geolocalización opcional, conclusión por streaming (Gemini).
+ * Funnel público (Afini): preguntas, registro, geolocalización opcional, conclusión por streaming (Gemini) y señales de afinidad.
  * @module app/c/[campaignSlug]/[leaderToken]/funnel-client
  */
 import { useCompletion } from "@ai-sdk/react";
