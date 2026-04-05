@@ -271,7 +271,7 @@ export function FunnelClient({
             />
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-medium text-[var(--muted)]">¿Intención de voto?</p>
+            <p className="text-xs font-medium text-[var(--muted)]">¿Te gustaría involucrarte en este proyecto?</p>
             <div className="flex flex-wrap gap-2">
               {(
                 [
