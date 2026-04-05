@@ -335,7 +335,7 @@ export function FunnelClient({
             {citizenFirstName ? (
               <>
                 <span className="font-medium text-[var(--foreground)]">{citizenFirstName}</span>, gracias por
-                esperar. Estamos preparando una respuesta pensada para ti; puede tardar unos segundos.
+                esperar. Estamos analizando tus respuestas para contarte que tan alineado estas con la campaña; puede tardar unos segundos.
               </>
             ) : (
               <>Gracias por esperar. Estamos preparando tu respuesta; puede tardar unos segundos.</>
@@ -359,7 +359,7 @@ export function FunnelClient({
             {completion ? (
               completion
             ) : isLoading ? (
-              <p className="text-[var(--muted)]">Aquí verás el texto en cuanto empiece a llegar…</p>
+              <p className="text-[var(--muted)]">Aquí verás la respuesta en cuanto finalicemos el análisis…</p>
             ) : (
               "…"
             )}
