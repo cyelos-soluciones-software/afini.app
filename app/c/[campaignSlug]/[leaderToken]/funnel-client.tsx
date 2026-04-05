@@ -5,14 +5,19 @@
  * @module app/c/[campaignSlug]/[leaderToken]/funnel-client
  */
 import { useCompletion } from "@ai-sdk/react";
-import { useState } from "react";
+import Script from "next/script";
+import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-number-input";
 import es from "react-phone-number-input/locale/es.json";
 import { CampaignShareButtons } from "@/app/components/campaign-share-buttons";
+import { TurnstileField } from "@/app/components/turnstile-field";
 import { LinkifyText } from "@/app/components/linkify-text";
 import { requestCitizenGeolocation } from "@/lib/citizen-geolocation";
 import { parseFunnelStreamError } from "@/lib/funnel-stream-error";
 import { isStrictE164Format, isValidPhoneNumber } from "@/lib/phone";
+
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+const turnstileEnabled = turnstileSiteKey.length > 0;
 
 export type FunnelQuestion = {
   id: string;
@@ -57,6 +62,14 @@ export function FunnelClient({
   const [error, setError] = useState<string | null>(null);
   const [phoneBlurred, setPhoneBlurred] = useState(false);
   const [isRequestingGeo, setIsRequestingGeo] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileScriptReady, setTurnstileScriptReady] = useState(false);
+  const [turnstileMountKey, setTurnstileMountKey] = useState(0);
+
+  useEffect(() => {
+    if (!turnstileEnabled || typeof window === "undefined") return;
+    if (window.turnstile) setTurnstileScriptReady(true);
+  }, [turnstileEnabled]);
 
   const phoneAcceptable =
     !!phone && isValidPhoneNumber(phone) && isStrictE164Format(phone);
@@ -75,6 +88,8 @@ export function FunnelClient({
         setError(
           "Gemini devolvió texto vacío. Revisa la clave en .env, cuotas y la consola donde corre `npm run dev`.",
         );
+        setTurnstileMountKey((n) => n + 1);
+        setTurnstileToken(null);
         setStep("contact");
         return;
       }
@@ -82,6 +97,8 @@ export function FunnelClient({
     },
     onError: (err) => {
       setError(parseFunnelStreamError(err));
+      setTurnstileMountKey((n) => n + 1);
+      setTurnstileToken(null);
       setStep("contact");
     },
   });
@@ -117,6 +134,10 @@ export function FunnelClient({
       setError("Indica un teléfono válido con código de país (solo dígitos, formato internacional).");
       return;
     }
+    if (turnstileEnabled && !turnstileToken) {
+      setError("Completa la verificación de seguridad antes de continuar.");
+      return;
+    }
 
     setError(null);
     setIsRequestingGeo(true);
@@ -136,17 +157,32 @@ export function FunnelClient({
 
     await complete("", {
       body: {
+        campaignSlug,
+        leaderToken,
         voter: voterPayload,
         answers: questions.map((q) => ({
           questionId: q.id,
           answer: answers[q.id]?.trim() ?? "",
         })),
+        ...(turnstileEnabled && turnstileToken ? { turnstileToken } : {}),
       },
     });
   }
 
   return (
     <div className="mx-auto flex min-h-full max-w-lg flex-col px-4 pb-10 pt-6">
+      {turnstileEnabled ? (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onLoad={() => setTurnstileScriptReady(true)}
+          onError={() => {
+            setError(
+              "No se pudo cargar la verificación de seguridad. Recarga la página o comprueba tu conexión.",
+            );
+          }}
+        />
+      ) : null}
       <div className="mb-6 h-1 w-full overflow-hidden rounded-full bg-[var(--border)]">
         <div
           className="h-full bg-[var(--primary)] transition-[width] duration-300"
@@ -204,7 +240,11 @@ export function FunnelClient({
               disabled={!canNext}
               onClick={() => {
                 if (qIndex < questions.length - 1) setQIndex((i) => i + 1);
-                else setStep("contact");
+                else {
+                  setTurnstileMountKey((n) => n + 1);
+                  setTurnstileToken(null);
+                  setStep("contact");
+                }
               }}
               className="flex-1 rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-[var(--primary-foreground)] disabled:opacity-50"
             >
@@ -301,6 +341,21 @@ export function FunnelClient({
               {error}
             </p>
           ) : null}
+          {turnstileEnabled ? (
+            <div className="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+              <p className="text-xs font-medium text-[var(--muted)]">Verificación anti‑bots</p>
+              {turnstileScriptReady ? (
+                <TurnstileField
+                  key={turnstileMountKey}
+                  siteKey={turnstileSiteKey}
+                  apiReady={turnstileScriptReady}
+                  onToken={setTurnstileToken}
+                />
+              ) : (
+                <p className="text-center text-xs text-[var(--muted)]">Cargando verificación…</p>
+              )}
+            </div>
+          ) : null}
           <div className="flex gap-2 pt-2">
             <button
               type="button"
@@ -317,7 +372,8 @@ export function FunnelClient({
                 !name.trim() ||
                 !phoneAcceptable ||
                 !neighborhood.trim() ||
-                !votingIntention
+                !votingIntention ||
+                (turnstileEnabled && (!turnstileScriptReady || !turnstileToken))
               }
               onClick={() => void runStream()}
               className="flex-1 rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-[var(--primary-foreground)] disabled:opacity-50"
