@@ -13,6 +13,7 @@ import { FUNNEL_SYSTEM_PROMPT } from "@/lib/prompts/funnel-system";
 import { prisma } from "@/lib/prisma";
 import { parseToE164 } from "@/lib/phone";
 import { checkFunnelRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -40,6 +41,8 @@ const bodySchema = z.object({
   prompt: z.string().optional(),
   campaignSlug: z.string().min(1).max(200),
   leaderToken: z.string().min(1).max(200),
+  /** Token de Cloudflare Turnstile; obligatorio si `TURNSTILE_SECRET_KEY` está definido. */
+  turnstileToken: z.string().min(1).optional(),
   voter: voterBodySchema,
   answers: z
     .array(
@@ -90,8 +93,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "validation_error", message: parsed.error.message }, { status: 400 });
   }
 
-  const { campaignSlug, leaderToken, voter, answers } = parsed.data;
+  const { campaignSlug, leaderToken, voter, answers, turnstileToken } = parsed.data;
   const ip = clientIp(req);
+
+  const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+  if (turnstileSecret) {
+    const token = turnstileToken?.trim();
+    if (!token) {
+      return NextResponse.json(
+        {
+          error: "turnstile_required",
+          message: "Completa la verificación de seguridad e inténtalo de nuevo.",
+        },
+        { status: 400 },
+      );
+    }
+    const turnstile = await verifyTurnstileToken(token, ip ?? undefined);
+    if (!turnstile.success) {
+      return NextResponse.json(
+        {
+          error: "turnstile_failed",
+          message:
+            "La verificación anti-bots no fue válida. Recarga la página y completa el desafío otra vez.",
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   const userAgent = req.headers.get("user-agent");
 
   const leader = await prisma.leaderProfile.findFirst({
