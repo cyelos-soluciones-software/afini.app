@@ -4,7 +4,7 @@
  * Uso (no commitear secretos):
  *   DATABASE_URL="postgresql://..." SUPER_ADMIN_EMAIL="correo@dominio.com" SUPER_ADMIN_PASSWORD="..." npx tsx scripts/upsert-super-admin.ts
  */
-import { PrismaClient, UserRole } from "@prisma/client";
+import { BillingPlan, PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const email = process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase();
@@ -30,10 +30,12 @@ async function main(adminEmail: string, adminPassword: string) {
       email: adminEmail,
       passwordHash,
       role: UserRole.SUPER_ADMIN,
+      billingPlan: BillingPlan.PREMIUM,
     },
     update: {
       passwordHash,
       role: UserRole.SUPER_ADMIN,
+      billingPlan: BillingPlan.PREMIUM,
     },
   });
   console.log(`Listo: SUPER_ADMIN ${user.email} (id ${user.id}).`);

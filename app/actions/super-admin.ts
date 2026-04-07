@@ -11,17 +11,78 @@ import { writeAuditLog } from "@/lib/audit";
 import { requireRole } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import type { DashboardActionState } from "@/lib/dashboard-form-state";
+import { FREE_TIER_MAX_VOTERS_PER_CAMPAIGN } from "@/lib/plan-limits";
+import { SUPER_ADMIN_CAMPAIGNS_PAGE_SIZE } from "@/lib/super-admin-constants";
 import { ensureUniqueCampaignSlug } from "@/lib/slug";
 
-/** Lista todas las campañas con conteos de líderes y votantes. */
-export async function listAllCampaigns() {
+const MIN_MAX_VOTERS = 1;
+const MAX_MAX_VOTERS = 10_000_000;
+
+function parseMaxVoters(raw: FormDataEntryValue | null): number {
+  const n = Number(raw ?? FREE_TIER_MAX_VOTERS_PER_CAMPAIGN);
+  if (!Number.isFinite(n)) return FREE_TIER_MAX_VOTERS_PER_CAMPAIGN;
+  return Math.max(MIN_MAX_VOTERS, Math.min(MAX_MAX_VOTERS, Math.floor(n)));
+}
+
+export type SuperAdminCampaignRow = {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: Date;
+  maxVoters: number;
+  _count: { leaders: number; voters: number };
+};
+
+export type SuperAdminCampaignListResult = {
+  items: SuperAdminCampaignRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+/**
+ * Listado paginado por servidor (nombre/slug), más recientes primero.
+ */
+export async function listCampaignsPaginated(options: {
+  page?: number;
+  q?: string;
+}): Promise<SuperAdminCampaignListResult> {
   await requireRole("SUPER_ADMIN");
-  return prisma.campaign.findMany({
-    orderBy: { updatedAt: "desc" },
-    include: {
+  const pageSize = SUPER_ADMIN_CAMPAIGNS_PAGE_SIZE;
+  const page = Math.max(1, Math.floor(options.page ?? 1));
+  const q = options.q?.trim() ?? "";
+  const where =
+    q.length > 0
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { slug: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {};
+
+  const total = await prisma.campaign.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const effectivePage = Math.min(Math.max(1, page), totalPages);
+  const skip = (effectivePage - 1) * pageSize;
+
+  const items = await prisma.campaign.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: pageSize,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      createdAt: true,
+      maxVoters: true,
       _count: { select: { leaders: true, voters: true } },
     },
   });
+
+  return { items, total, page: effectivePage, pageSize, totalPages };
 }
 
 /** Detalle de campaña incluyendo administradores asignados. */
@@ -49,6 +110,7 @@ export async function createCampaignAction(
   const description = String(formData.get("description") ?? "").trim() || null;
   const aiContext = String(formData.get("aiContext") ?? "").trim().slice(0, 2000) || null;
   const maxLeaders = Math.max(1, Math.min(5000, Number(formData.get("maxLeaders") ?? 20)));
+  const maxVoters = parseMaxVoters(formData.get("maxVoters"));
 
   if (!name) {
     return { error: "El nombre de la campaña es obligatorio." };
@@ -64,6 +126,7 @@ export async function createCampaignAction(
       description,
       aiContext,
       maxLeaders,
+      maxVoters,
       creatorId: session.user.id,
     },
   });
@@ -94,12 +157,13 @@ export async function updateCampaignAction(
   const aiContext = String(formData.get("aiContext") ?? "").trim().slice(0, 2000) || null;
   const closingCtaText = String(formData.get("closingCtaText") ?? "").trim().slice(0, 8000) || null;
   const maxLeaders = Math.max(1, Math.min(5000, Number(formData.get("maxLeaders") ?? 20)));
+  const maxVoters = parseMaxVoters(formData.get("maxVoters"));
 
   if (!name) return { error: "El nombre de la campaña es obligatorio." };
 
   await prisma.campaign.update({
     where: { id: campaignId },
-    data: { name, slogan, description, aiContext, closingCtaText, maxLeaders },
+    data: { name, slogan, description, aiContext, closingCtaText, maxLeaders, maxVoters },
   });
 
   await writeAuditLog({
@@ -150,20 +214,25 @@ export async function assignCampaignAdminAction(
       return { error: "Ese correo ya existe con otro rol." };
     }
   } else {
-    if (password.length < 8) {
-      return { error: "Para usuarios nuevos, la contraseña debe tener al menos 8 caracteres." };
+    if (password.length > 0 && password.length < 8) {
+      return { error: "Si indicas contraseña para un usuario nuevo, debe tener al menos 8 caracteres." };
     }
-    const hash = await bcrypt.hash(password, 12);
     await prisma.user.create({
       data: {
         email,
-        passwordHash: hash,
+        passwordHash: password.length >= 8 ? await bcrypt.hash(password, 12) : null,
         role: "CAMPAIGN_ADMIN",
       },
     });
   }
 
   const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+
+  const alreadyLinked = await prisma.campaignAdmin.findUnique({
+    where: {
+      userId_campaignId: { userId: user.id, campaignId },
+    },
+  });
 
   await prisma.campaignAdmin.upsert({
     where: {
@@ -238,6 +307,7 @@ export async function createSuperAdminAction(
       email,
       passwordHash: hash,
       role: "SUPER_ADMIN",
+      billingPlan: "PREMIUM",
     },
   });
 

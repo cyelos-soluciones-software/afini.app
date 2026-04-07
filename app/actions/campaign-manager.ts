@@ -12,7 +12,9 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { canViewCampaignHeatmap, hasCampaignAccess } from "@/lib/authz";
 import type { DashboardActionState } from "@/lib/dashboard-form-state";
+import { buildLeaderInviteCopy } from "@/lib/leader-invite";
 import { leaderDisplayLabel } from "@/lib/leader-display";
+import { campaignHasPremiumVoterBudget } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -42,24 +44,51 @@ export async function getCampaignNameIfAllowed(campaignId: string) {
   });
 }
 
-/** Campañas visibles en el selector: todas para súper admin, asignadas para admin de campaña. */
-export async function listAccessibleCampaigns() {
+export type AccessibleCampaignRow = {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: Date;
+};
+
+/** Campañas visibles en el listado: todas para súper admin, asignadas para admin de campaña. Más recientes primero; `q` filtra por nombre o slug. */
+export async function listAccessibleCampaigns(options?: { q?: string }): Promise<AccessibleCampaignRow[]> {
   const session = await auth();
   if (!session?.user?.id) return [];
 
+  const q = options?.q?.trim() ?? "";
+  const textFilter =
+    q.length > 0
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { slug: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : undefined;
+
   if (session.user.role === "SUPER_ADMIN") {
     return prisma.campaign.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true },
+      where: textFilter,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, slug: true, createdAt: true },
     });
   }
 
   if (session.user.role === "CAMPAIGN_ADMIN") {
     const links = await prisma.campaignAdmin.findMany({
       where: { userId: session.user.id },
-      include: { campaign: { select: { id: true, name: true, slug: true } } },
+      select: { campaignId: true },
     });
-    return links.map((l) => l.campaign);
+    const ids = links.map((l) => l.campaignId);
+    if (ids.length === 0) return [];
+    return prisma.campaign.findMany({
+      where: {
+        AND: [{ id: { in: ids } }, ...(textFilter ? [textFilter] : [])],
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, slug: true, createdAt: true },
+    });
   }
 
   return [];
@@ -191,20 +220,24 @@ export async function createLeaderAction(
   const displayName = String(formData.get("displayName") ?? "").trim();
 
   if (!email || password.length < 8) {
-    return { error: "Correo obligatorio y contraseña de al menos 8 caracteres." };
+    return { error: "Correo obligatorio y contraseña de al menos 8 caracteres.", inviteMessage: null };
   }
 
   const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
-  if (!campaign) return { error: "Campaña no encontrada." };
+  if (!campaign) return { error: "Campaña no encontrada.", inviteMessage: null };
 
   const count = await prisma.leaderProfile.count({ where: { campaignId } });
-  if (count >= campaign.maxLeaders) {
-    return { error: `Límite de líderes alcanzado (${campaign.maxLeaders}).` };
+  const premium = await campaignHasPremiumVoterBudget(campaignId);
+  if (!premium && count >= campaign.maxLeaders) {
+    return {
+      error: `Límite de líderes en plan gratuito para esta campaña (${campaign.maxLeaders}). Amplía con Premium (ventas por campaña).`,
+      inviteMessage: null,
+    };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return { error: "Ese correo ya está registrado; usa otro." };
+    return { error: "Ese correo ya está registrado; usa otro.", inviteMessage: null };
   }
 
   const hash = await bcrypt.hash(password, 12);
@@ -238,7 +271,7 @@ export async function createLeaderAction(
   });
 
   revalidatePath(`/dashboard/campaign-admin/${campaignId}`);
-  return { error: null };
+  return { error: null, inviteMessage: buildLeaderInviteCopy(email, password) };
 }
 
 /** Orden fijo para informes (Sí → Tal vez → No). */
@@ -456,6 +489,96 @@ export async function getCampaignHeatmapData(campaignId: string): Promise<null |
       maybe: maybe.length,
       withGeo: votersWithGeo.length,
       withoutGeo,
+    },
+  };
+}
+
+/**
+ * Puntos con geolocalización agrupados por sentimiento IA (última interacción con `sentiment` no nulo por votante).
+ * @see getCampaignHeatmapData — mismo permiso ({@link canViewCampaignHeatmap}).
+ */
+export async function getCampaignHeatmapSentimentData(campaignId: string): Promise<null | {
+  campaignName: string;
+  positive: HeatmapGeoPoint[];
+  neutral: HeatmapGeoPoint[];
+  negative: HeatmapGeoPoint[];
+  stats: {
+    positive: number;
+    neutral: number;
+    negative: number;
+    withGeo: number;
+    withoutGeo: number;
+    withGeoNoSentiment: number;
+  };
+}> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const allowed = await canViewCampaignHeatmap(session.user.id, session.user.role, campaignId);
+  if (!allowed) return null;
+
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: { name: true },
+  });
+  if (!campaign) return null;
+
+  const [votersWithGeo, withoutGeo] = await Promise.all([
+    prisma.voter.findMany({
+      where: {
+        campaignId,
+        latitude: { not: null },
+        longitude: { not: null },
+      },
+      select: {
+        latitude: true,
+        longitude: true,
+        interactions: {
+          where: { sentiment: { not: null } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { sentiment: true },
+        },
+      },
+    }),
+    prisma.voter.count({
+      where: {
+        campaignId,
+        OR: [{ latitude: null }, { longitude: null }],
+      },
+    }),
+  ]);
+
+  const positive: HeatmapGeoPoint[] = [];
+  const neutral: HeatmapGeoPoint[] = [];
+  const negative: HeatmapGeoPoint[] = [];
+  let withGeoNoSentiment = 0;
+
+  for (const v of votersWithGeo) {
+    if (v.latitude == null || v.longitude == null) continue;
+    const p = { lat: v.latitude, lng: v.longitude };
+    const s = v.interactions[0]?.sentiment;
+    if (s == null) {
+      withGeoNoSentiment++;
+      continue;
+    }
+    if (s === "positive") positive.push(p);
+    else if (s === "neutral") neutral.push(p);
+    else if (s === "negative") negative.push(p);
+    else withGeoNoSentiment++;
+  }
+
+  return {
+    campaignName: campaign.name,
+    positive,
+    neutral,
+    negative,
+    stats: {
+      positive: positive.length,
+      neutral: neutral.length,
+      negative: negative.length,
+      withGeo: votersWithGeo.length,
+      withoutGeo,
+      withGeoNoSentiment,
     },
   };
 }

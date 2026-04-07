@@ -1,39 +1,30 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCampaignHeatmapData } from "@/app/actions/campaign-manager";
-import { CampaignHeatMapDynamic } from "@/app/components/campaign-heat-map-dynamic";
+import { getCampaignHeatmapData, getCampaignHeatmapSentimentData } from "@/app/actions/campaign-manager";
+import { HeatmapViewTabs } from "./heatmap-view-tabs";
 
 export default async function CampaignHeatmapPage({ params }: { params: Promise<{ campaignId: string }> }) {
   const { campaignId } = await params;
-  const data = await getCampaignHeatmapData(campaignId);
-  if (!data) notFound();
-
-  const { campaignName, yes, no, maybe, stats } = data;
+  const [intention, sentiment] = await Promise.all([
+    getCampaignHeatmapData(campaignId),
+    getCampaignHeatmapSentimentData(campaignId),
+  ]);
+  if (!intention || !sentiment) notFound();
 
   return (
     <div className="space-y-8">
       <div>
         <Link href={`/dashboard/campaign-admin/${campaignId}`} className="text-sm text-[var(--primary)] hover:underline">
-          ← {campaignName}
+          ← {intention.campaignName}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">Mapa de calor · intención de voto</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">Mapas de calor</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          OpenStreetMap + Leaflet. Cada capa agrupa la densidad aproximada de registros con GPS (o coordenadas de
-          prueba) según la intención declarada al cerrar el funnel.
-        </p>
-        <p className="mt-2 text-xs text-[var(--muted)]">
-          Con coordenadas: <span className="font-medium text-[var(--foreground)]">{stats.withGeo}</span> · Sin
-          coordenadas: <span className="font-medium text-[var(--foreground)]">{stats.withoutGeo}</span> · Puntos en
-          mapa: Sí {stats.yes}, No {stats.no}, Tal vez {stats.maybe}
+          OpenStreetMap + Leaflet. Elige intención de voto o sentimiento (IA); ambos usan la geolocalización del ciudadano
+          cuando aceptó compartir ubicación.
         </p>
       </div>
 
-      <CampaignHeatMapDynamic yes={yes} no={no} maybe={maybe} />
-
-      <p className="text-xs text-[var(--muted)]">
-        Los datos de ubicación dependen del permiso del navegador del ciudadano. Las coordenadas son aproximadas; no
-        sustituyen censos oficiales.
-      </p>
+      <HeatmapViewTabs intention={intention} sentiment={sentiment} />
     </div>
   );
 }

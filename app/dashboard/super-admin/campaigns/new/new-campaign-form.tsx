@@ -41,6 +41,20 @@ export function NewCampaignForm() {
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
         />
       </div>
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-[var(--foreground)]">Máximo de ciudadanos (funnel)</label>
+        <p className="text-xs text-[var(--muted)]">
+          Cupo en plan gratuito (puedes subirlo para campañas concretas). Por defecto 25.
+        </p>
+        <input
+          name="maxVoters"
+          type="number"
+          min={1}
+          max={10000000}
+          defaultValue={25}
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+        />
+      </div>
       {state.error ? (
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">
           {state.error}

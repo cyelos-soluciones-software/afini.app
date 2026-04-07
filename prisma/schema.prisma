@@ -13,6 +13,12 @@ enum UserRole {
   LEADER
 }
 
+/// Plan comercial (PLG): el usuario puede tener varias campañas; Premium desbloquea límites por campaña según acuerdo.
+enum BillingPlan {
+  FREE
+  PREMIUM
+}
+
 enum VotingIntention {
   YES
   NO
@@ -20,17 +26,60 @@ enum VotingIntention {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  role         UserRole
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  /// Null si el usuario solo entra con Google (administrador).
+  passwordHash  String?
+  role          UserRole   @default(CAMPAIGN_ADMIN)
+  billingPlan   BillingPlan @default(FREE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
+  accounts         Account[]
+  sessions         Session[]
   createdCampaigns Campaign[]       @relation("CampaignCreator")
   leaderProfiles   LeaderProfile[]
-  campaignAdmins     CampaignAdmin[]
-  auditLogs          AuditLog[]
+  campaignAdmins   CampaignAdmin[]
+  auditLogs        AuditLog[]
+}
+
+/// Cuentas OAuth (Auth.js / NextAuth + PrismaAdapter).
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 /// Campaña electoral (multi-tenant).
@@ -45,6 +94,8 @@ model Campaign {
   /// Texto opcional tras la conclusión del funnel (enlaces, web, más información).
   closingCtaText String? @db.Text
   maxLeaders  Int
+  /// Tope de ciudadanos (Voter) en plan gratuito; el súper admin puede subirlo por campaña. Premium sin tope en funnel.
+  maxVoters   Int      @default(25)
   photoUrl    String?
   creatorId   String?
   creator     User?    @relation("CampaignCreator", fields: [creatorId], references: [id], onDelete: SetNull)
@@ -56,6 +107,8 @@ model Campaign {
   voters    Voter[]
   missions  Mission[]
   admins    CampaignAdmin[]
+
+  @@index([createdAt])
 }
 
 /// Administradores de campaña (muchos usuarios ↔ muchas campañas).

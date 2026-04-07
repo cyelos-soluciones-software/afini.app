@@ -13,6 +13,7 @@ import { FUNNEL_SYSTEM_PROMPT } from "@/lib/prompts/funnel-system";
 import { prisma } from "@/lib/prisma";
 import { parseToE164 } from "@/lib/phone";
 import { checkFunnelRateLimit } from "@/lib/rate-limit";
+import { campaignHasPremiumVoterBudget } from "@/lib/plan-limits";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
@@ -139,6 +140,22 @@ export async function POST(req: Request) {
 
   if (!leader) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  const premiumVoters = await campaignHasPremiumVoterBudget(leader.campaignId);
+  if (!premiumVoters) {
+    const cap = Math.max(1, leader.campaign.maxVoters);
+    const voterTotal = await prisma.voter.count({ where: { campaignId: leader.campaignId } });
+    if (voterTotal >= cap) {
+      return NextResponse.json(
+        {
+          error: "LIMIT_REACHED",
+          message:
+            "Esta campaña alcanzó el límite de participación en el plan gratuito. Vuelve a intentar más tarde o contacta a la campaña.",
+        },
+        { status: 403 },
+      );
+    }
   }
 
   const requiredIds = new Set(leader.campaign.questions.map((q) => q.id));

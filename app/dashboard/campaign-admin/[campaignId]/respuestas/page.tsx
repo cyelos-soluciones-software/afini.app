@@ -48,7 +48,7 @@ export default async function ParticipantResponsesPage({
             href={`/dashboard/campaign-admin/${campaignId}/mapa`}
             className="text-sm font-medium text-[var(--primary)] hover:underline"
           >
-            Mapa de calor por intención de voto →
+            Mapas de calor (intención y sentimiento IA) →
           </Link>
         </p>
       </div>
