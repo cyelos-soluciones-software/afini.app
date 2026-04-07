@@ -41,7 +41,7 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
           Gestionar preguntas, misiones y líderes →
         </Link>
         <Link href={`/dashboard/campaign-admin/${campaign.id}/mapa`} className="font-medium text-[var(--primary)] hover:underline">
-          Mapa de calor (participación en el proyecto) →
+          Mapas de calor (intención y sentimiento IA) →
         </Link>
       </p>
     </div>

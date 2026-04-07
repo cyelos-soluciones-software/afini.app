@@ -51,7 +51,7 @@ export default async function CampaignManagePage({ params }: { params: Promise<{
             href={`/dashboard/campaign-admin/${campaignId}/mapa`}
             className="text-sm font-medium text-[var(--primary)] hover:underline"
           >
-            Mapa de calor (participación en el proyecto) →
+            Mapas de calor (intención de voto y sentimiento IA) →
           </Link>
         </p>
       </div>

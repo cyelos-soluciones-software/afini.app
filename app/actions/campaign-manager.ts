@@ -493,6 +493,96 @@ export async function getCampaignHeatmapData(campaignId: string): Promise<null |
   };
 }
 
+/**
+ * Puntos con geolocalización agrupados por sentimiento IA (última interacción con `sentiment` no nulo por votante).
+ * @see getCampaignHeatmapData — mismo permiso ({@link canViewCampaignHeatmap}).
+ */
+export async function getCampaignHeatmapSentimentData(campaignId: string): Promise<null | {
+  campaignName: string;
+  positive: HeatmapGeoPoint[];
+  neutral: HeatmapGeoPoint[];
+  negative: HeatmapGeoPoint[];
+  stats: {
+    positive: number;
+    neutral: number;
+    negative: number;
+    withGeo: number;
+    withoutGeo: number;
+    withGeoNoSentiment: number;
+  };
+}> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const allowed = await canViewCampaignHeatmap(session.user.id, session.user.role, campaignId);
+  if (!allowed) return null;
+
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: { name: true },
+  });
+  if (!campaign) return null;
+
+  const [votersWithGeo, withoutGeo] = await Promise.all([
+    prisma.voter.findMany({
+      where: {
+        campaignId,
+        latitude: { not: null },
+        longitude: { not: null },
+      },
+      select: {
+        latitude: true,
+        longitude: true,
+        interactions: {
+          where: { sentiment: { not: null } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { sentiment: true },
+        },
+      },
+    }),
+    prisma.voter.count({
+      where: {
+        campaignId,
+        OR: [{ latitude: null }, { longitude: null }],
+      },
+    }),
+  ]);
+
+  const positive: HeatmapGeoPoint[] = [];
+  const neutral: HeatmapGeoPoint[] = [];
+  const negative: HeatmapGeoPoint[] = [];
+  let withGeoNoSentiment = 0;
+
+  for (const v of votersWithGeo) {
+    if (v.latitude == null || v.longitude == null) continue;
+    const p = { lat: v.latitude, lng: v.longitude };
+    const s = v.interactions[0]?.sentiment;
+    if (s == null) {
+      withGeoNoSentiment++;
+      continue;
+    }
+    if (s === "positive") positive.push(p);
+    else if (s === "neutral") neutral.push(p);
+    else if (s === "negative") negative.push(p);
+    else withGeoNoSentiment++;
+  }
+
+  return {
+    campaignName: campaign.name,
+    positive,
+    neutral,
+    negative,
+    stats: {
+      positive: positive.length,
+      neutral: neutral.length,
+      negative: negative.length,
+      withGeo: votersWithGeo.length,
+      withoutGeo,
+      withGeoNoSentiment,
+    },
+  };
+}
+
 /** Texto opcional mostrado al ciudadano al finalizar el funnel (desde panel admin de campaña). */
 export async function updateCampaignClosingCtaAction(
   campaignId: string,
