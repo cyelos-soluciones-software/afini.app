@@ -8,7 +8,8 @@ Aplicación **Next.js (App Router)** para **crear y evaluar redes de afinidad** 
 
 - **Funnel público** por enlace único por líder: `/c/[campaignSlug]/[leaderToken]` — preguntas abiertas, datos de contacto, **Gemini** genera una conclusión personalizada; se persiste **Voter** + **Interaction** (chatLog JSON, `affinityScore`, `sentiment`).
 - **Dashboard** por roles: **SUPER_ADMIN**, **CAMPAIGN_ADMIN**, **LEADER**.
-- **Mapa de calor** (Leaflet + OSM + `leaflet.heat`) por campaña, intención de voto; acceso solo súper admin y admin de campaña (`canViewCampaignHeatmap`).
+- **Mapas de calor** (Leaflet + OSM + `leaflet.heat`) por campaña: **intención de voto** y **sentimiento (IA)**; acceso solo súper admin y admin de campaña (`canViewCampaignHeatmap`).
+- **Inicio con métricas** (`/dashboard`): KPIs + gráfico diario de ciudadanos con filtros (30d/1m/2m/3m/personalizado). Súper admin ve global; admin de campaña ve solo sus campañas.
 
 Idioma de UI: **español**. Comentarios JSDoc y mensajes de error hacia usuario en español cuando aplique.
 
@@ -25,6 +26,7 @@ Idioma de UI: **español**. Comentarios JSDoc y mensajes de error hacia usuario 
 | Teléfono | `libphonenumber-js` + `react-phone-number-input` |
 | Gráficos dashboard | Recharts |
 | Export respuestas | ExcelJS |
+| SEO básico | `metadata` Next, `sitemap.xml`, `robots.txt` |
 
 ## Estructura de carpetas (resumen)
 
@@ -73,6 +75,16 @@ Errores cliente stream: `lib/funnel-stream-error.ts` (`parseFunnelStreamError`).
 
 Ver `.env.example`. Críticas: `DATABASE_URL`, `AUTH_SECRET`, clave Gemini (`GOOGLE_GENERATIVE_AI_API_KEY` o `GEMINI_API_KEY`), opcional `NEXT_PUBLIC_APP_URL`, Upstash para rate limit.
 
+## Freemium / límites (por campaña)
+
+- Por defecto, una campaña creada por un **administrador de campaña** inicia con:
+  - **Máximo de líderes**: 1 (`FREE_TIER_MAX_LEADERS_PER_CAMPAIGN`)
+  - **Máximo de ciudadanos**: 25 (`FREE_TIER_MAX_VOTERS_PER_CAMPAIGN`)
+- El **SUPER_ADMIN** puede ajustar por campaña:
+  - `Campaign.maxLeaders`
+  - `Campaign.maxVoters`
+- En el funnel, si hay “presupuesto Premium” para la campaña (ver `campaignHasPremiumVoterBudget`), el tope de ciudadanos no aplica; para líderes, la UI y acción de crear líder respetan el cupo cuando no hay Premium.
+
 ## Scripts
 
 - `npm run dev` — desarrollo
@@ -92,6 +104,7 @@ Ver `.env.example`. Críticas: `DATABASE_URL`, `AUTH_SECRET`, clave Gemini (`GOO
 - **Teléfono**: único `(campaignId, phone)` en E.164; validación doble `libphonenumber` + regex en `lib/phone.ts`.
 - **Auditoría**: `writeAuditLog` no debe romper el flujo principal (try/catch interno).
 - **Heatmap datos**: solo coordenadas en BD; privacidad — documentado en UI.
+- **SEO / indexación**: `robots.txt` bloquea `/dashboard`, `/api` y `/c/*` para evitar indexación de áreas privadas.
 
 ## Dónde ampliar contexto
 
