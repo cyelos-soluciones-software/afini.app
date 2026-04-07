@@ -38,7 +38,7 @@ type Props = {
   questions: FunnelQuestion[];
 };
 
-type Step = "intro" | "questions" | "contact" | "streaming" | "done";
+type Step = "intro" | "questions" | "contact" | "streaming" | "done" | "limit_full";
 
 /**
  * Orquesta los pasos del funnel y el `useCompletion` contra `/api/funnel/stream`.
@@ -82,6 +82,20 @@ export function FunnelClient({
     api: "/api/funnel/stream",
     streamProtocol: "text",
     body: { campaignSlug, leaderToken },
+    fetch: async (input, init) => {
+      const res = await fetch(input, init);
+      if (res.status === 403) {
+        try {
+          const data = (await res.clone().json()) as { error?: string };
+          if (data.error === "LIMIT_REACHED") {
+            throw new Error("LIMIT_REACHED");
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message === "LIMIT_REACHED") throw e;
+        }
+      }
+      return res;
+    },
     onFinish: (_prompt, text) => {
       const full = text.trim();
       if (!full) {
@@ -96,6 +110,10 @@ export function FunnelClient({
       setStep("done");
     },
     onError: (err) => {
+      if (err instanceof Error && err.message === "LIMIT_REACHED") {
+        setStep("limit_full");
+        return;
+      }
       setError(parseFunnelStreamError(err));
       setTurnstileMountKey((n) => n + 1);
       setTurnstileToken(null);
@@ -111,7 +129,9 @@ export function FunnelClient({
         ? Math.min(95, Math.round(((qIndex + 1) / questions.length) * 70) + 5)
         : step === "contact"
           ? 85
-          : 100;
+          : step === "limit_full"
+            ? 100
+            : 100;
 
   const canNext =
     currentQuestion && (answers[currentQuestion.id]?.trim().length ?? 0) > 0;
@@ -189,6 +209,19 @@ export function FunnelClient({
           style={{ width: `${progress}%` }}
         />
       </div>
+
+      {step === "limit_full" && (
+        <section className="space-y-4 text-center">
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--primary)]">Participación</p>
+          <h1 className="text-2xl font-semibold text-[var(--foreground)]">¡Gracias por tu interés!</h1>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-left text-sm leading-relaxed text-[var(--foreground)]">
+            <p>
+              ¡Wow! Esta campaña ha tenido una participación increíble y está procesando resultados en este momento.
+              Por favor, intenta de nuevo más tarde.
+            </p>
+          </div>
+        </section>
+      )}
 
       {step === "intro" && (
         <section className="space-y-4">

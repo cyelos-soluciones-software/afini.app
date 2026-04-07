@@ -3,7 +3,7 @@
  * Al final asigna coordenadas de prueba en Colombia a votantes sin `latitude`/`longitude`.
  * Ejecutar con `npm run db:seed`.
  */
-import { PrismaClient, UserRole } from "@prisma/client";
+import { BillingPlan, PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { COLOMBIA_CITY_SAMPLES, jitterCoord } from "@/lib/colombia-geo-samples";
 
@@ -19,10 +19,12 @@ async function main() {
       email: "super@afini.local",
       passwordHash: hash,
       role: UserRole.SUPER_ADMIN,
+      billingPlan: BillingPlan.PREMIUM,
     },
     update: {
       passwordHash: hash,
       role: UserRole.SUPER_ADMIN,
+      billingPlan: BillingPlan.PREMIUM,
     },
   });
 
@@ -37,6 +39,7 @@ async function main() {
       aiContext:
         "Prioridades de la campaña: escuchar el territorio, soluciones concretas y diálogo respetuoso. No prometer lo que no depende del candidato.",
       maxLeaders: 20,
+      maxVoters: 500,
       creatorId: superUser.id,
     },
     update: {
@@ -46,6 +49,7 @@ async function main() {
         "Demostración del funnel y redes de afinidad. Comparte el enlace con wa.me para movilizar sin API de WhatsApp.",
       aiContext:
         "Prioridades de la campaña: escuchar el territorio, soluciones concretas y diálogo respetuoso. No prometer lo que no depende del candidato.",
+      maxVoters: 500,
     },
   });
 

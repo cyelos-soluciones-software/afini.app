@@ -6,10 +6,16 @@ import { LoginForm } from "@/app/login/login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; error?: string }>;
 }) {
   const session = await auth();
   const params = await searchParams;
+
+  const googleEnabled =
+    typeof process.env.GOOGLE_CLIENT_ID === "string" &&
+    process.env.GOOGLE_CLIENT_ID.length > 0 &&
+    typeof process.env.GOOGLE_CLIENT_SECRET === "string" &&
+    process.env.GOOGLE_CLIENT_SECRET.length > 0;
 
   if (session?.user) {
     redirect(params.callbackUrl && params.callbackUrl.startsWith("/") ? params.callbackUrl : "/dashboard");
@@ -24,7 +30,11 @@ export default async function LoginPage({
           <h1 className="font-display mt-2 text-xl font-semibold text-[var(--foreground)]">Acceso al panel</h1>
           <p className="mt-1 text-sm text-[var(--muted)]">Redes de afinidad, métricas y funnel según tu rol.</p>
         </div>
-        <LoginForm callbackUrl={params.callbackUrl} />
+        <LoginForm
+          callbackUrl={params.callbackUrl}
+          googleEnabled={googleEnabled}
+          errorCode={params.error ?? null}
+        />
         <p className="text-center text-[11px] leading-relaxed text-[var(--muted)]">
           ¿Primera vez en el móvil? Después de entrar puedes instalar Afini desde el menú del navegador para abrirla desde
           la pantalla de inicio.

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CampaignCharts } from "@/app/components/campaign-charts";
+import { CampaignFreemiumBanner } from "@/app/components/campaign-freemium-banner";
+import { CampaignPlanLimitsCallout } from "@/app/components/campaign-plan-limits-callout";
+import { CopyLeaderAccessButton } from "@/app/components/copy-leader-access-button";
 import { deleteQuestionAction, getCampaignAnalytics, getCampaignDetail } from "@/app/actions/campaign-manager";
+import { campaignHasPremiumVoterBudget } from "@/lib/plan-limits";
 import { ClosingCtaForm, NewLeaderForm, NewMissionForm, NewQuestionForm } from "./campaign-forms";
 
 export default async function CampaignManagePage({ params }: { params: Promise<{ campaignId: string }> }) {
@@ -10,9 +14,23 @@ export default async function CampaignManagePage({ params }: { params: Promise<{
   if (!campaign) notFound();
 
   const analytics = await getCampaignAnalytics(campaignId);
+  const premiumVoters = await campaignHasPremiumVoterBudget(campaignId);
 
   return (
     <div className="space-y-12">
+      <CampaignFreemiumBanner
+        voterCount={campaign._count.voters}
+        premiumUnlocked={premiumVoters}
+        maxVotersCap={campaign.maxVoters}
+      />
+      <CampaignPlanLimitsCallout
+        campaignId={campaignId}
+        campaignName={campaign.name}
+        maxVoters={campaign.maxVoters}
+        maxLeaders={campaign.maxLeaders}
+        leaderCount={campaign._count.leaders}
+        premiumUnlocked={premiumVoters}
+      />
       <div>
         <Link href="/dashboard/campaign-admin" className="text-sm text-[var(--primary)] hover:underline">
           ← Campañas
@@ -33,7 +51,7 @@ export default async function CampaignManagePage({ params }: { params: Promise<{
             href={`/dashboard/campaign-admin/${campaignId}/mapa`}
             className="text-sm font-medium text-[var(--primary)] hover:underline"
           >
-            Mapa de calor (intención de voto) →
+            Mapa de calor (participación en el proyecto) →
           </Link>
         </p>
       </div>
@@ -81,13 +99,24 @@ export default async function CampaignManagePage({ params }: { params: Promise<{
         <h2 className="text-lg font-medium text-[var(--foreground)]">Líderes digitales</h2>
         <ul className="space-y-2 text-sm">
           {campaign.leaders.map((l) => (
-            <li key={l.id} className="flex justify-between rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-2">
-              <span>{l.user.email}</span>
-              <span className="text-[var(--muted)]">{l._count.voters} referidos</span>
+            <li
+              key={l.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-2"
+            >
+              <span className="text-[var(--foreground)]">{l.user.email}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--muted)]">{l._count.voters} referidos</span>
+                <CopyLeaderAccessButton leaderEmail={l.user.email} />
+              </div>
             </li>
           ))}
         </ul>
-        <NewLeaderForm campaignId={campaignId} />
+        <NewLeaderForm
+          campaignId={campaignId}
+          leaderCount={campaign._count.leaders}
+          maxLeaders={campaign.maxLeaders}
+          premiumUnlocked={premiumVoters}
+        />
       </section>
 
       <section className="space-y-4">

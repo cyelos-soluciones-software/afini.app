@@ -14,8 +14,8 @@ export default async function SuperUsersPage() {
   return (
     <div className="space-y-10">
       <div>
-        <Link href="/dashboard/super-admin" className="text-sm font-medium text-[var(--primary)] hover:underline">
-          ← Administración global
+        <Link href="/dashboard" className="text-sm font-medium text-[var(--primary)] hover:underline">
+          ← Inicio
         </Link>
         <h1 className="font-display mt-2 text-2xl font-semibold text-[var(--foreground)]">Equipo admin</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
