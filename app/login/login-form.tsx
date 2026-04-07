@@ -85,10 +85,9 @@ export function LoginForm({
         onSubmit={onSubmit}
         className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_32px_var(--brand-glow)]"
       >
-        <h2 className="text-sm font-semibold text-[var(--foreground)]">Líder o súper administrador</h2>
+        <h2 className="text-sm font-semibold text-[var(--foreground)]">Líder de campaña</h2>
         <p className="text-xs text-[var(--muted)]">
-          Correo y contraseña (líderes, súper admin y en desarrollo también admin de campaña). Cuentas demo: super@afini.local
-          tras <code className="rounded bg-[var(--border)] px-1">npm run db:seed</code>.
+          Correo y contraseña.
         </p>
         <div className="space-y-2">
           <label htmlFor="email" className="block text-sm font-medium text-[var(--foreground)]">
