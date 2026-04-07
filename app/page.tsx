@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { LogoCyelos } from "@/app/components/brand-logos";
 
+export const metadata = {
+  title: "Motor de afinidad con IA",
+  description:
+    "Convierte redes sociales en un embudo de afinidad. Mide sentimiento con IA, entiende el territorio y moviliza con privacidad garantizada.",
+};
+
 const useCases = [
   {
     icon: "🚀",
@@ -47,7 +53,7 @@ export default function Home() {
           <nav className="flex flex-shrink-0 items-center gap-2 sm:gap-3" aria-label="Principal">
             <Link
               href="/c/demo/demo-token-1"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-xl px-3 text-sm font-medium text-[var(--primary)] hover:underline sm:px-4"
+              className="hidden min-h-[44px] items-center justify-center rounded-xl px-3 text-sm font-medium text-[var(--primary)] hover:underline sm:inline-flex sm:px-4"
             >
               Ver demo
             </Link>

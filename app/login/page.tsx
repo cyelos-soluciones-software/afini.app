@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { LogoCyelos } from "@/app/components/brand-logos";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/app/login/login-form";
 
@@ -25,6 +26,9 @@ export default async function LoginPage({
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-10 sm:py-12">
       <div className="w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center text-center">
+          <Link href="/" className="text-sm font-medium text-[var(--primary)] hover:underline">
+            ← Volver al inicio
+          </Link>
           <LogoCyelos priority className="mx-auto block h-11 max-w-[220px] object-center" />
           <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">Afini</p>
           <h1 className="font-display mt-2 text-xl font-semibold text-[var(--foreground)]">Acceso al panel</h1>

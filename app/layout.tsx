@@ -6,6 +6,11 @@ import { ServiceWorkerRegister } from "@/app/components/service-worker-register"
 import { Providers } from "@/app/providers";
 import "./globals.css";
 
+const siteUrl =
+  (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.startsWith("http")
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : "https://afini.app") as string;
+
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
@@ -24,10 +29,60 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Afini",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Afini — Inteligencia accionable con privacidad garantizada",
+    template: "%s — Afini",
+  },
   description:
-    "Plataforma para crear y evaluar redes de afinidad: funnel con IA, paneles por rol y PWA en móvil.",
+    "Afini es un motor de afinidad con IA: convierte redes sociales en un embudo, mide sentimiento y moviliza sin exponer datos. Producto de Cyelos Soluciones de Software (Colombia).",
   applicationName: "Afini",
+  alternates: {
+    canonical: "/",
+  },
+  keywords: [
+    "Afini",
+    "inteligencia accionable",
+    "sentimiento IA",
+    "funnel",
+    "mapa de calor",
+    "campañas",
+    "movilización",
+    "Colombia",
+    "Cyelos",
+  ],
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "Afini",
+    title: "Afini — Inteligencia accionable con privacidad garantizada",
+    description:
+      "Motor de afinidad con IA para medir sentimiento, activar interesados y entender el territorio con mapas de calor. Producto de Cyelos Soluciones de Software (Colombia).",
+    images: [
+      {
+        url: "/logos/LogoCodeImagen.png",
+        width: 512,
+        height: 512,
+        alt: "Afini (Cyelos)",
+      },
+    ],
+    locale: "es_CO",
+  },
+  twitter: {
+    card: "summary",
+    title: "Afini — Inteligencia accionable con privacidad garantizada",
+    description:
+      "Motor de afinidad con IA para medir sentimiento y movilizar sin exponer datos. Producto de Cyelos (Colombia).",
+    images: ["/logos/LogoCodeImagen.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
   icons: {
     icon: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
     apple: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
