@@ -24,6 +24,11 @@ export function AppFooter() {
             </Link>
             . NIT <span className="whitespace-nowrap font-medium text-[var(--foreground)]">901.619.792-1</span>.
           </p>
+          <p className="text-[11px] text-[var(--muted)]">
+            <Link href="/privacidad" className="font-medium text-[var(--primary)] underline-offset-2 hover:underline">
+              Política de privacidad
+            </Link>
+          </p>
           <p className="text-[11px] leading-snug text-[var(--muted)]">
             <span className="font-medium text-[var(--foreground)]">Instalar como app (PWA):</span> en Chrome o Edge, menú
             ⋮ → <em>Instalar aplicación</em> o <em>Instalar Afini</em>. En Safari (iPhone), usa{" "}
