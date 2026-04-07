@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, type ReactNode } from "react";
 import { assignCampaignAdminAction, updateCampaignAction } from "@/app/actions/super-admin";
 import { initialDashboardFormState } from "@/lib/dashboard-form-state";
 
@@ -12,7 +12,33 @@ type Campaign = {
   aiContext: string | null;
   closingCtaText: string | null;
   maxLeaders: number;
+  maxVoters: number;
 };
+
+const fieldClass =
+  "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/25";
+
+function FieldGroup({
+  label,
+  htmlFor,
+  hint,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--foreground)]">
+        {label}
+      </label>
+      {hint ? <p className="text-xs leading-relaxed text-[var(--muted)]">{hint}</p> : null}
+      {children}
+    </div>
+  );
+}
 
 export function CampaignEditForm({ campaign }: { campaign: Campaign }) {
   const [state, formAction, isPending] = useActionState(
@@ -21,80 +47,100 @@ export function CampaignEditForm({ campaign }: { campaign: Campaign }) {
   );
 
   return (
-    <form action={formAction} className="mt-4 space-y-4">
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Nombre</label>
-        <input
-          name="name"
-          required
-          defaultValue={campaign.name}
-          className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-        />
+    <form action={formAction} className="mt-6 flex max-w-3xl flex-col gap-8">
+      <div className="flex flex-col gap-6">
+        <FieldGroup label="Nombre" htmlFor="camp-name">
+          <input id="camp-name" name="name" required defaultValue={campaign.name} className={fieldClass} />
+        </FieldGroup>
+        <FieldGroup label="Slogan" htmlFor="camp-slogan">
+          <input id="camp-slogan" name="slogan" defaultValue={campaign.slogan ?? ""} className={fieldClass} />
+        </FieldGroup>
+        <FieldGroup label="Descripción" htmlFor="camp-desc">
+          <textarea
+            id="camp-desc"
+            name="description"
+            rows={3}
+            defaultValue={campaign.description ?? ""}
+            className={`${fieldClass} min-h-[5rem] resize-y`}
+          />
+        </FieldGroup>
+        <FieldGroup
+          label="Contexto IA"
+          htmlFor="camp-ai"
+          hint="Texto de apoyo para los modelos (máx. 2000 caracteres en formulario)."
+        >
+          <textarea
+            id="camp-ai"
+            name="aiContext"
+            maxLength={2000}
+            rows={4}
+            defaultValue={campaign.aiContext ?? ""}
+            className={`${fieldClass} min-h-[6rem] resize-y`}
+          />
+        </FieldGroup>
+        <FieldGroup
+          label="Mensaje final del funnel (opcional)"
+          htmlFor="camp-closing"
+          hint="Se muestra al ciudadano después de la conclusión IA (enlaces, web, más información)."
+        >
+          <textarea
+            id="camp-closing"
+            name="closingCtaText"
+            maxLength={8000}
+            rows={4}
+            defaultValue={campaign.closingCtaText ?? ""}
+            placeholder="Ej.: Más información: https://..."
+            className={`${fieldClass} min-h-[6rem] resize-y`}
+          />
+        </FieldGroup>
       </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Slogan</label>
-        <input
-          name="slogan"
-          defaultValue={campaign.slogan ?? ""}
-          className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-        />
+
+      <div className="border-t border-[var(--border)] pt-8">
+        <h3 className="mb-6 text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">Cupos por campaña</h3>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FieldGroup label="Máximo de líderes" htmlFor="camp-max-leaders">
+            <input
+              id="camp-max-leaders"
+              name="maxLeaders"
+              type="number"
+              min={1}
+              max={5000}
+              defaultValue={campaign.maxLeaders}
+              className={fieldClass}
+            />
+          </FieldGroup>
+          <FieldGroup
+            label="Máximo de ciudadanos (funnel)"
+            htmlFor="camp-max-voters"
+            hint="Tope en plan gratuito (por defecto 25). Con Premium en la campaña no aplica este límite en el funnel."
+          >
+            <input
+              id="camp-max-voters"
+              name="maxVoters"
+              type="number"
+              min={1}
+              max={10000000}
+              defaultValue={campaign.maxVoters}
+              className={fieldClass}
+            />
+          </FieldGroup>
+        </div>
       </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Descripción</label>
-        <textarea
-          name="description"
-          rows={3}
-          defaultValue={campaign.description ?? ""}
-          className="w-full max-w-xl rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Contexto IA</label>
-        <textarea
-          name="aiContext"
-          maxLength={2000}
-          rows={4}
-          defaultValue={campaign.aiContext ?? ""}
-          className="w-full max-w-xl rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Mensaje final del funnel (opcional)</label>
-        <p className="text-xs text-[var(--muted)]">
-          Se muestra al ciudadano después de la conclusión IA (enlaces, web, más información).
-        </p>
-        <textarea
-          name="closingCtaText"
-          maxLength={8000}
-          rows={4}
-          defaultValue={campaign.closingCtaText ?? ""}
-          placeholder="Ej.: Más información: https://..."
-          className="w-full max-w-xl rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Máximo de líderes</label>
-        <input
-          name="maxLeaders"
-          type="number"
-          min={1}
-          max={5000}
-          defaultValue={campaign.maxLeaders}
-          className="w-full max-w-xs rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-        />
-      </div>
+
       {state.error ? (
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">
           {state.error}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={isPending}
-        className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] disabled:opacity-60"
-      >
-        {isPending ? "Guardando…" : "Guardar"}
-      </button>
+      <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-6">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="rounded-lg bg-[var(--primary)] px-5 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-sm transition hover:opacity-95 disabled:opacity-60"
+        >
+          {isPending ? "Guardando…" : "Guardar cambios"}
+        </button>
+      </div>
     </form>
   );
 }
@@ -106,34 +152,40 @@ export function AssignAdminForm({ campaignId }: { campaignId: string }) {
   );
 
   return (
-    <form action={formAction} className="mt-4 max-w-xl space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="min-w-0 flex-1 space-y-1">
-          <label className="text-sm font-medium">Correo del administrador</label>
+    <form action={formAction} className="mt-6 flex max-w-3xl flex-col gap-6">
+      <div className="grid gap-6 sm:grid-cols-2">
+        <FieldGroup label="Correo del administrador" htmlFor="assign-email">
           <input
+            id="assign-email"
             name="email"
             type="email"
             required
             placeholder="admin@ejemplo.com"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            className={fieldClass}
           />
-        </div>
-        <div className="min-w-0 flex-1 space-y-1">
-          <label className="text-sm font-medium">Contraseña (solo usuario nuevo)</label>
+        </FieldGroup>
+        <FieldGroup
+          label="Contraseña (opcional, usuario nuevo)"
+          htmlFor="assign-password"
+          hint="Si lo dejas vacío, el admin entrará solo con Google usando este correo."
+        >
           <input
+            id="assign-password"
             name="password"
             type="password"
             autoComplete="new-password"
-            placeholder="Mín. 8 caracteres"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            placeholder="Vacío = solo Google"
+            className={fieldClass}
           />
-        </div>
+        </FieldGroup>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={isPending}
-          className="shrink-0 rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium disabled:opacity-60"
+          className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-5 py-2.5 text-sm font-semibold text-[var(--foreground)] shadow-sm transition hover:bg-[var(--border)]/40 disabled:opacity-60"
         >
-          {isPending ? "…" : "Asignar"}
+          {isPending ? "Asignando…" : "Asignar administrador"}
         </button>
       </div>
       {state.error ? (
