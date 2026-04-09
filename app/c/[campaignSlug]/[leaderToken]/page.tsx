@@ -52,6 +52,8 @@ export default async function FunnelPage({
         name: leader.campaign.name,
         slogan: leader.campaign.slogan,
         description: leader.campaign.description,
+        bannerUrl: leader.campaign.bannerUrl,
+        photoUrl: leader.campaign.photoUrl,
       }}
       questions={leader.campaign.questions.map((q) => ({
         id: q.id,

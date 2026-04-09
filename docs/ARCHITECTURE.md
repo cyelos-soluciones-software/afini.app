@@ -7,7 +7,7 @@ Documento de referencia técnica. Para agentes de IA, priorizar también `AGENTS
 Entidades principales (ver `prisma/schema.prisma`):
 
 - **User** — `email`, `passwordHash`, `UserRole` (`SUPER_ADMIN` | `CAMPAIGN_ADMIN` | `LEADER`).
-- **Campaign** — `slug` único, textos de campaña, `aiContext` para IA, `maxLeaders`, `closingCtaText` opcional.
+- **Campaign** — `slug` único, textos de campaña, `aiContext` para IA, `closingCtaText` opcional, media opcional (`bannerUrl`, `photoUrl`) y cupos: `maxLeaders` y `maxVoters` (freemium por campaña; editable por super admin).
 - **CampaignAdmin** — N:N usuario administrador ↔ campaña.
 - **LeaderProfile** — `uniqueUrlToken` (segmento URL funnel), `personalInfo` JSON (p. ej. `displayName`).
 - **Question** — por campaña: texto pregunta, `officialAnswer`, `geminiContext`, `sortOrder`.
@@ -56,8 +56,11 @@ Errores HTTP: 400 validación, 404 líder, 409 duplicado, 429 rate limit, 503 si
 
 ## 5. Dashboard
 
-- **Campaign admin**: detalle campaña, CRUD preguntas/misiones/líderes, gráficos (`getCampaignAnalytics`), respuestas paginadas, mapa `/mapa`.
-- **Super admin**: listado/editar campañas, asignar admins.
+- **Inicio (`/dashboard`)**:
+  - `SUPER_ADMIN`: métricas globales (KPIs + “ciudadanos nuevos por día”) con filtros (30d/1m/2m/3m/personalizado).
+  - `CAMPAIGN_ADMIN`: mismas métricas, pero filtradas a campañas donde es creador o está asignado en `CampaignAdmin`.
+- **Campaign admin**: listado campañas con filtro y orden por `createdAt desc`, crear campañas sin límite; detalle campaña, CRUD preguntas/misiones/líderes, gráficos (`getCampaignAnalytics`), respuestas paginadas, mapas `/mapa`.
+- **Super admin**: listado campañas paginado por servidor con filtro y orden por `createdAt desc`, editar cupos (`maxLeaders`, `maxVoters`) y asignar admins; CRUD de “equipo admin” (usuarios super admin).
 - **Leader**: campaña asociada, misiones con ack.
 
 Server Actions concentradas en `app/actions/campaign-manager.ts`, `super-admin.ts`, `leader.ts`, `participant-responses.ts`. Re-export mínimo en `campaign.ts`.
@@ -72,7 +75,9 @@ Ruta API export protegida por misma lógica de acceso a campaña (revisar handle
 ## 7. Mapa de calor
 
 - Datos: `getCampaignHeatmapData` — agrupa puntos por `VotingIntention`.
+- Datos: `getCampaignHeatmapSentimentData` — agrupa puntos por sentimiento IA (`Interaction.sentiment`) usando la última interacción con sentimiento no nulo por votante.
 - UI: `CampaignHeatMapDynamic` (cliente) → `CampaignHeatMap` + `HeatmapLayers` con `createHeatLayer` (`lib/leaflet-heat.ts`).
+- UI: `CampaignSentimentHeatMapDynamic` → `CampaignSentimentHeatMap` (capas positivo/neutral/negativo).
 - Tiles: OpenStreetMap estándar (atribución obligatoria).
 
 ## 8. IA (Gemini)
@@ -93,3 +98,5 @@ Ruta API export protegida por misma lógica de acceso a campaña (revisar handle
 
 - Requiere HTTPS para geolocalización en navegador (excepto localhost).
 - Variables de entorno en hosting deben incluir `AUTH_SECRET`, DB, Gemini, opcional Redis y `NEXT_PUBLIC_APP_URL`.
+- SEO básico: `app/sitemap.ts` y `app/robots.ts` generan `sitemap.xml` y `robots.txt`. Se evita indexación de rutas privadas (`/dashboard`, `/api`, `/c/*`).
+- Media campañas: Cloudflare R2 (S3 compatible). Ver `.env.example` (variables `R2_*`) y endpoint `POST /api/uploads/r2` para presign (PUT) desde formularios.
