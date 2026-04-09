@@ -85,8 +85,13 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
-    apple: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
+    icon: [
+      { url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "32x32" },
+      { url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "192x192" },
+      { url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
+    apple: [{ url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "180x180" }],
   },
   appleWebApp: {
     capable: true,
