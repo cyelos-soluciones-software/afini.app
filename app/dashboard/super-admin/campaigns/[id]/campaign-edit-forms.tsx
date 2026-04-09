@@ -2,6 +2,7 @@
 
 import { useActionState, type ReactNode } from "react";
 import { assignCampaignAdminAction, updateCampaignAction } from "@/app/actions/super-admin";
+import { CampaignMediaUploader } from "@/app/components/campaign-media-uploader";
 import { initialDashboardFormState } from "@/lib/dashboard-form-state";
 
 type Campaign = {
@@ -13,6 +14,8 @@ type Campaign = {
   closingCtaText: string | null;
   maxLeaders: number;
   maxVoters: number;
+  bannerUrl: string | null;
+  photoUrl: string | null;
 };
 
 const fieldClass =
@@ -93,6 +96,27 @@ export function CampaignEditForm({ campaign }: { campaign: Campaign }) {
             className={`${fieldClass} min-h-[6rem] resize-y`}
           />
         </FieldGroup>
+
+        <div className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--background)]/30 p-4">
+          <p className="text-sm font-medium text-[var(--foreground)]">Imagen y banner (opcional)</p>
+          <p className="text-xs text-[var(--muted)]">Recomendado: banner 1600×600 (8:3) y foto 512×512 (cuadrada).</p>
+          <CampaignMediaUploader
+            campaignId={campaign.id}
+            kind="banner"
+            label="Banner"
+            hint="Imagen horizontal para el encabezado del funnel."
+            currentUrl={campaign.bannerUrl}
+            fieldName="bannerUrl"
+          />
+          <CampaignMediaUploader
+            campaignId={campaign.id}
+            kind="photo"
+            label="Fotografía"
+            hint="Imagen principal (avatar) de la campaña."
+            currentUrl={campaign.photoUrl}
+            fieldName="photoUrl"
+          />
+        </div>
       </div>
 
       <div className="border-t border-[var(--border)] pt-8">

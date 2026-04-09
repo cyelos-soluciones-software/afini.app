@@ -75,6 +75,11 @@ Errores cliente stream: `lib/funnel-stream-error.ts` (`parseFunnelStreamError`).
 
 Ver `.env.example`. Críticas: `DATABASE_URL`, `AUTH_SECRET`, clave Gemini (`GOOGLE_GENERATIVE_AI_API_KEY` o `GEMINI_API_KEY`), opcional `NEXT_PUBLIC_APP_URL`, Upstash para rate limit.
 
+### Cloudflare R2 (imágenes de campaña)
+
+- `R2_ENDPOINT`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`
+- Se usan para subir **banner** y **foto** opcionales de cada campaña.
+
 ## Freemium / límites (por campaña)
 
 - Por defecto, una campaña creada por un **administrador de campaña** inicia con:
@@ -105,6 +110,7 @@ Ver `.env.example`. Críticas: `DATABASE_URL`, `AUTH_SECRET`, clave Gemini (`GOO
 - **Auditoría**: `writeAuditLog` no debe romper el flujo principal (try/catch interno).
 - **Heatmap datos**: solo coordenadas en BD; privacidad — documentado en UI.
 - **SEO / indexación**: `robots.txt` bloquea `/dashboard`, `/api` y `/c/*` para evitar indexación de áreas privadas.
+- **Uploads**: las imágenes de campaña se suben a R2 vía URL firmada (PUT) y se guardan como URL pública en `Campaign.bannerUrl` y `Campaign.photoUrl`.
 
 ## Dónde ampliar contexto
 

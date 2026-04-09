@@ -102,6 +102,8 @@ export async function getCampaignDetail(campaignId: string) {
     include: {
       questions: { orderBy: { sortOrder: "asc" } },
       missions: { orderBy: { createdAt: "desc" }, take: 50 },
+      // Incluye media para previsualización y uso en funnel.
+      // (bannerUrl/photoUrl viven en Campaign)
       leaders: {
         include: {
           user: { select: { email: true } },
@@ -606,5 +608,36 @@ export async function updateCampaignClosingCtaAction(
   });
 
   revalidatePath(`/dashboard/campaign-admin/${campaignId}`);
+  return { error: null };
+}
+
+/**
+ * Actualiza imágenes de campaña (banner y foto) por admins con acceso.
+ * Ambos campos son opcionales; valores vacíos limpian la URL.
+ */
+export async function updateCampaignMediaAction(
+  campaignId: string,
+  _prevState: DashboardActionState,
+  formData: FormData,
+): Promise<DashboardActionState> {
+  const session = await requireCampaignContext(campaignId);
+  const bannerUrl = String(formData.get("bannerUrl") ?? "").trim() || null;
+  const photoUrl = String(formData.get("photoUrl") ?? "").trim() || null;
+
+  await prisma.campaign.update({
+    where: { id: campaignId },
+    data: { bannerUrl, photoUrl },
+  });
+
+  await writeAuditLog({
+    userId: session.user.id,
+    email: session.user.email,
+    action: "campaign_media_update",
+    entity: "Campaign",
+    entityId: campaignId,
+  });
+
+  revalidatePath(`/dashboard/campaign-admin/${campaignId}`);
+  revalidatePath(`/dashboard/campaign-admin/${campaignId}/mapa`);
   return { error: null };
 }

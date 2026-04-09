@@ -5,8 +5,10 @@ import {
   createLeaderAction,
   createMissionAction,
   createQuestionAction,
+  updateCampaignMediaAction,
   updateCampaignClosingCtaAction,
 } from "@/app/actions/campaign-manager";
+import { CampaignMediaUploader } from "@/app/components/campaign-media-uploader";
 import { initialDashboardFormState } from "@/lib/dashboard-form-state";
 
 export function NewQuestionForm({ campaignId }: { campaignId: string }) {
@@ -225,6 +227,60 @@ export function ClosingCtaForm({
         className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] disabled:opacity-60"
       >
         {isPending ? "Guardando…" : "Guardar mensaje final"}
+      </button>
+    </form>
+  );
+}
+
+export function CampaignMediaForm({
+  campaignId,
+  bannerUrl,
+  photoUrl,
+}: {
+  campaignId: string;
+  bannerUrl: string | null;
+  photoUrl: string | null;
+}) {
+  const [state, formAction, isPending] = useActionState(
+    updateCampaignMediaAction.bind(null, campaignId),
+    initialDashboardFormState,
+  );
+
+  return (
+    <form action={formAction} className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+      <h3 className="text-sm font-medium text-[var(--foreground)]">Imagen de campaña (opcional)</h3>
+      <p className="text-xs text-[var(--muted)]">
+        Recomendado: banner 1600×600 (8:3) y foto 512×512 (cuadrada). Se muestran al inicio del funnel.
+      </p>
+      <div className="space-y-4">
+        <CampaignMediaUploader
+          campaignId={campaignId}
+          kind="banner"
+          label="Banner"
+          hint="Imagen horizontal para el encabezado del funnel."
+          currentUrl={bannerUrl}
+          fieldName="bannerUrl"
+        />
+        <CampaignMediaUploader
+          campaignId={campaignId}
+          kind="photo"
+          label="Fotografía"
+          hint="Imagen principal (avatar) de la campaña."
+          currentUrl={photoUrl}
+          fieldName="photoUrl"
+        />
+      </div>
+      {state.error ? (
+        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+      <button
+        type="submit"
+        disabled={isPending}
+        className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] disabled:opacity-60"
+      >
+        {isPending ? "Guardando…" : "Guardar imágenes"}
       </button>
     </form>
   );

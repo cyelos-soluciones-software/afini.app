@@ -94,4 +94,5 @@ Si devuelve:
 - Rotar llaves si se exponen por error.
 - En Neon, usar SSL (`sslmode=require`).
 - Ejecutar migraciones fuera de horas pico si son pesadas.
+- Mantener `schema.prisma` y `.env.example` actualizados cuando se agregan columnas/vars nuevas (p. ej. `Campaign.bannerUrl` y variables `R2_*`).
 

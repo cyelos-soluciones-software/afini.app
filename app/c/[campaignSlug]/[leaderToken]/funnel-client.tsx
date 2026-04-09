@@ -34,6 +34,8 @@ type Props = {
     name: string;
     slogan: string | null;
     description: string | null;
+    bannerUrl: string | null;
+    photoUrl: string | null;
   };
   questions: FunnelQuestion[];
 };
@@ -226,11 +228,31 @@ export function FunnelClient({
       {step === "intro" && (
         <section className="space-y-4">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--primary)]">Conversación</p>
+          {campaign.bannerUrl ? (
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+              <img
+                src={campaign.bannerUrl}
+                alt={`Banner de ${campaign.name}`}
+                className="h-[160px] w-full object-cover sm:h-[220px]"
+              />
+            </div>
+          ) : null}
+          <div className="flex items-start gap-3">
+            {campaign.photoUrl ? (
+              <img
+                src={campaign.photoUrl}
+                alt={`Foto de ${campaign.name}`}
+                className="mt-1 h-12 w-12 shrink-0 rounded-full border border-[var(--border)] object-cover"
+              />
+            ) : null}
+            <div className="min-w-0">
           <h1 className="text-2xl font-semibold text-[var(--foreground)]">{campaign.name}</h1>
           {campaign.slogan ? <p className="text-lg text-[var(--muted)]">{campaign.slogan}</p> : null}
           {campaign.description ? (
             <p className="text-sm leading-relaxed text-[var(--muted)]">{campaign.description}</p>
           ) : null}
+            </div>
+          </div>
           <p className="text-sm text-[var(--foreground)]">
             Te haremos {questions.length} pregunta{questions.length === 1 ? "" : "s"} en lenguaje natural. Luego
             podrás dejarnos tus datos de contacto.

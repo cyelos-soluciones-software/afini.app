@@ -20,6 +20,8 @@
     "@ai-sdk/google": "^3.0.58",
     "@ai-sdk/react": "^3.0.147",
     "@auth/prisma-adapter": "^2.11.1",
+    "@aws-sdk/client-s3": "^3.1027.0",
+    "@aws-sdk/s3-request-presigner": "^3.1027.0",
     "@prisma/client": "^5.22.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
