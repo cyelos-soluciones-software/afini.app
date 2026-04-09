@@ -41,6 +41,8 @@ export async function createCampaignAsCampaignAdminAction(
       slogan,
       maxLeaders: FREE_TIER_MAX_LEADERS_PER_CAMPAIGN,
       maxVoters: FREE_TIER_MAX_VOTERS_PER_CAMPAIGN,
+      bannerUrl: null,
+      photoUrl: null,
       creatorId: session.user.id,
       admins: {
         create: { userId: session.user.id },

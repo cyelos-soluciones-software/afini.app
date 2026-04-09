@@ -1,6 +1,6 @@
 # Afini (`afini.app`)
 
-Plataforma Next.js para **crear y evaluar redes de afinidad** en movilización digital: funnel con IA (Gemini), registro de participantes con geolocalización opcional, paneles por rol y mapas de calor por intención de voto.
+Plataforma Next.js para **crear y evaluar redes de afinidad**: funnel con IA (Gemini), registro de participantes con geolocalización opcional, paneles por rol, métricas por período y mapas de calor por **intención de voto** y **sentimiento (IA)**.
 
 ## Documentación para desarrollo y Cursor
 
@@ -9,6 +9,7 @@ Plataforma Next.js para **crear y evaluar redes de afinidad** en movilización d
 | [**AGENTS.md**](./AGENTS.md) | Contexto del proyecto, stack, carpetas, convenciones — **léelo primero en Cursor**. |
 | [**docs/ARCHITECTURE.md**](./docs/ARCHITECTURE.md) | Modelo de datos, APIs, flujos funnel y dashboard. |
 | [**docs/README.md**](./docs/README.md) | Índice de esta carpeta. |
+| [**docs/NEON_PRISMA_DEPLOY.md**](./docs/NEON_PRISMA_DEPLOY.md) | Cómo aplicar migraciones Prisma en Neon (release y producción). |
 
 ## Requisitos
 

@@ -6,7 +6,7 @@ import { CampaignPlanLimitsCallout } from "@/app/components/campaign-plan-limits
 import { CopyLeaderAccessButton } from "@/app/components/copy-leader-access-button";
 import { deleteQuestionAction, getCampaignAnalytics, getCampaignDetail } from "@/app/actions/campaign-manager";
 import { campaignHasPremiumVoterBudget } from "@/lib/plan-limits";
-import { ClosingCtaForm, NewLeaderForm, NewMissionForm, NewQuestionForm } from "./campaign-forms";
+import { CampaignMediaForm, ClosingCtaForm, NewLeaderForm, NewMissionForm, NewQuestionForm } from "./campaign-forms";
 
 export default async function CampaignManagePage({ params }: { params: Promise<{ campaignId: string }> }) {
   const { campaignId } = await params;
@@ -93,6 +93,11 @@ export default async function CampaignManagePage({ params }: { params: Promise<{
           ))}
         </ul>
         <NewMissionForm campaignId={campaignId} />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium text-[var(--foreground)]">Imagen y banner</h2>
+        <CampaignMediaForm campaignId={campaignId} bannerUrl={campaign.bannerUrl} photoUrl={campaign.photoUrl} />
       </section>
 
       <section className="space-y-4">

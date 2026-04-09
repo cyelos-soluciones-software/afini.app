@@ -96,6 +96,8 @@ model Campaign {
   maxLeaders  Int
   /// Tope de ciudadanos (Voter) en plan gratuito; el súper admin puede subirlo por campaña. Premium sin tope en funnel.
   maxVoters   Int      @default(25)
+  /// Imagen horizontal para el encabezado del funnel (recomendado 1600x600, 8:3). Opcional.
+  bannerUrl   String?
   photoUrl    String?
   creatorId   String?
   creator     User?    @relation("CampaignCreator", fields: [creatorId], references: [id], onDelete: SetNull)

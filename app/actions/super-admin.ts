@@ -109,6 +109,8 @@ export async function createCampaignAction(
   const slogan = String(formData.get("slogan") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
   const aiContext = String(formData.get("aiContext") ?? "").trim().slice(0, 2000) || null;
+  const bannerUrl = String(formData.get("bannerUrl") ?? "").trim() || null;
+  const photoUrl = String(formData.get("photoUrl") ?? "").trim() || null;
   const maxLeaders = Math.max(1, Math.min(5000, Number(formData.get("maxLeaders") ?? 20)));
   const maxVoters = parseMaxVoters(formData.get("maxVoters"));
 
@@ -125,6 +127,8 @@ export async function createCampaignAction(
       slogan,
       description,
       aiContext,
+      bannerUrl,
+      photoUrl,
       maxLeaders,
       maxVoters,
       creatorId: session.user.id,
@@ -156,6 +160,8 @@ export async function updateCampaignAction(
   const description = String(formData.get("description") ?? "").trim() || null;
   const aiContext = String(formData.get("aiContext") ?? "").trim().slice(0, 2000) || null;
   const closingCtaText = String(formData.get("closingCtaText") ?? "").trim().slice(0, 8000) || null;
+  const bannerUrl = String(formData.get("bannerUrl") ?? "").trim() || null;
+  const photoUrl = String(formData.get("photoUrl") ?? "").trim() || null;
   const maxLeaders = Math.max(1, Math.min(5000, Number(formData.get("maxLeaders") ?? 20)));
   const maxVoters = parseMaxVoters(formData.get("maxVoters"));
 
@@ -163,7 +169,7 @@ export async function updateCampaignAction(
 
   await prisma.campaign.update({
     where: { id: campaignId },
-    data: { name, slogan, description, aiContext, closingCtaText, maxLeaders, maxVoters },
+    data: { name, slogan, description, aiContext, closingCtaText, bannerUrl, photoUrl, maxLeaders, maxVoters },
   });
 
   await writeAuditLog({

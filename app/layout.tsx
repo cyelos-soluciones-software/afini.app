@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Geist_Mono, Outfit } from "next/font/google";
 import { AppFooter } from "@/app/components/app-footer";
 import { IosInstallPrompt } from "@/app/components/ios-install-prompt";
+import { PwaInstallPrompt } from "@/app/components/pwa-install-prompt";
 import { ServiceWorkerRegister } from "@/app/components/service-worker-register";
 import { Providers } from "@/app/providers";
 import "./globals.css";
@@ -84,8 +85,13 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
-    apple: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
+    icon: [
+      { url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "32x32" },
+      { url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "192x192" },
+      { url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: [{ url: "/logos/LogoCodeImagen.png", type: "image/png" }],
+    apple: [{ url: "/logos/LogoCodeImagen.png", type: "image/png", sizes: "180x180" }],
   },
   appleWebApp: {
     capable: true,
@@ -120,6 +126,7 @@ export default function RootLayout({
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
           <AppFooter />
           <IosInstallPrompt />
+          <PwaInstallPrompt />
           <ServiceWorkerRegister />
         </Providers>
       </body>
