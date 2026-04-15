@@ -34,6 +34,8 @@ Abre [http://localhost:3000](http://localhost:3000). Usuarios de prueba tras el 
 - `admin@afini.local` — administrador de la campaña demo  
 - `lider@afini.local` — líder digital (funnel: `/c/demo/demo-token-1`)
 
+En el funnel (`/c/...`) el ciudadano diligencia datos de contacto (incluye **correo opcional**). Los colores del embudo se pueden configurar **por campaña** desde el panel (sección “Colores del embudo ciudadano”).
+
 ## Scripts npm
 
 | Script | Descripción |
