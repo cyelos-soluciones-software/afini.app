@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { parseToE164 } from "@/lib/phone";
 import { checkFunnelRateLimit } from "@/lib/rate-limit";
 import { campaignHasPremiumVoterBudget } from "@/lib/plan-limits";
+import { parseOptionalEmail } from "@/lib/optional-email";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
@@ -24,6 +25,22 @@ const voterBodySchema = z
     name: z.string().min(1).max(200),
     /** E.164 con código de país (p. ej. +573001234567). */
     phone: z.string().min(8).max(24),
+    /** Opcional; vacío se omite. Misma regla que {@link parseOptionalEmail}. */
+    email: z.preprocess(
+      (val) => {
+        if (val === undefined || val === null) return undefined;
+        const s = String(val).trim();
+        return s.length === 0 ? undefined : s;
+      },
+      z
+        .string()
+        .max(254)
+        .superRefine((val, ctx) => {
+          const r = parseOptionalEmail(val);
+          if (!r.ok) ctx.addIssue({ code: z.ZodIssueCode.custom, message: r.message });
+        })
+        .optional(),
+    ),
     neighborhood: z.string().min(1).max(300),
     votingIntention: z.enum(["YES", "NO", "MAYBE"]),
     /** WGS84; opcional. Debe ir junto con longitude. */
@@ -194,6 +211,7 @@ export async function POST(req: Request) {
   const voterNormalized = {
     name: voter.name.trim(),
     phone: phoneNorm.e164,
+    email: voter.email ?? null,
     neighborhood: voter.neighborhood.trim(),
     votingIntention: voter.votingIntention,
     latitude: voter.latitude ?? null,
@@ -283,6 +301,7 @@ ${citizenSummary}`,
             campaignId: leaderRef.campaignId,
             name: voterNormalized.name,
             phone: voterNormalized.phone,
+            email: voterNormalized.email,
             neighborhood: voterNormalized.neighborhood,
             votingIntention: voterNormalized.votingIntention,
             latitude: voterNormalized.latitude,
