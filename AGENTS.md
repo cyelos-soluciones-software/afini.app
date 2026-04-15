@@ -44,6 +44,8 @@ lib/
   ai/gemini.ts              # Clave y modelo Gemini
   authz.ts                  # hasCampaignAccess, canViewCampaignHeatmap
   audit.ts                  # writeAuditLog
+  funnel-theme.ts           # Tema opcional del embudo por campaña (CSS vars)
+  optional-email.ts         # Validación de correo opcional en funnel
   rate-limit.ts             # checkFunnelRateLimit
   phone.ts                  # E.164, parseToE164
   funnel/                   # buildUserPrompt
@@ -65,9 +67,16 @@ Control multi-tenant: `lib/authz.ts` + `requireCampaignContext` en `campaign-man
 
 ## Flujo funnel (citizen)
 
-1. Cliente: `FunnelClient` — pasos intro → preguntas → contacto (nombre, teléfono E.164, barrio, intención).
+1. Cliente: `FunnelClient` — pasos intro → preguntas → contacto (nombre, teléfono E.164, **correo opcional**, barrio, intención).
 2. Antes de enviar: `requestCitizenGeolocation()` (opcional); cuerpo incluye `latitude`/`longitude` si hay permiso.
-3. `POST /api/funnel/stream` — valida body (Zod), líder+campaña, respuestas completas, teléfono único por campaña, rate limit, Gemini `streamText`; al terminar stream persiste votante + interacción y métricas opcionales (`generateObject`).
+3. `POST /api/funnel/stream` — valida body (Zod), líder+campaña, respuestas completas, teléfono único por campaña, rate limit, Gemini `streamText`; al terminar stream persiste votante + interacción y métricas opcionales (`generateObject`). El correo es opcional y **no** se valida unicidad.
+
+### Apariencia por campaña (solo funnel `/c/...`)
+
+- **Tema configurable por campaña**: `Campaign.funnelTheme` (JSON) permite sobrescribir variables CSS (`--background`, `--foreground`, `--muted`, `--border`, `--surface`, `--primary`, `--primary-foreground`) **solo** en el embudo público.
+- **Dónde se aplica**: `app/c/[campaignSlug]/[leaderToken]/layout.tsx`.
+- **Dónde se configura**: panel de admin de campaña y súper admin (sección “Colores del embudo ciudadano”).
+- **Privacidad**: en el paso “Tus datos”, el enlace a `/privacidad` se abre en **nueva pestaña** para no perder avances del formulario.
 
 Errores cliente stream: `lib/funnel-stream-error.ts` (`parseFunnelStreamError`).
 
