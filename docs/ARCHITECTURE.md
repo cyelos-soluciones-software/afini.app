@@ -7,12 +7,12 @@ Documento de referencia técnica. Para agentes de IA, priorizar también `AGENTS
 Entidades principales (ver `prisma/schema.prisma`):
 
 - **User** — `email`, `passwordHash`, `UserRole` (`SUPER_ADMIN` | `CAMPAIGN_ADMIN` | `LEADER`).
-- **Campaign** — `slug` único, textos de campaña, `aiContext` para IA, `closingCtaText` opcional, media opcional (`bannerUrl`, `photoUrl`) y cupos: `maxLeaders` y `maxVoters` (freemium por campaña; editable por super admin).
+- **Campaign** — `slug` único, textos de campaña, `aiContext` para IA, `closingCtaText` opcional, media opcional (`bannerUrl`, `photoUrl`), **tema opcional del embudo** `funnelTheme` (JSON) y cupos: `maxLeaders` y `maxVoters` (freemium por campaña; editable por super admin).
 - **CampaignAdmin** — N:N usuario administrador ↔ campaña.
 - **LeaderProfile** — `uniqueUrlToken` (segmento URL funnel), `personalInfo` JSON (p. ej. `displayName`).
 - **Question** — por campaña: texto pregunta, `officialAnswer`, `geminiContext`, `sortOrder`.
 - **Mission** — difusión; **MissionAck** — confirmación por líder.
-- **Voter** — por campaña: nombre, teléfono E.164, barrio, `votingIntention`, `latitude`/`longitude` opcionales (WGS84). **@@unique([campaignId, phone])**.
+- **Voter** — por campaña: nombre, teléfono E.164, **correo opcional** `email`, barrio, `votingIntention`, `latitude`/`longitude` opcionales (WGS84). **@@unique([campaignId, phone])**.
 - **Interaction** — `voterId`, `chatLog` JSON (versión 1: qas, conclusión, métricas), `affinityScore`, `sentiment`.
 - **AuditLog** — trazas operativas.
 
@@ -35,17 +35,23 @@ Entidades principales (ver `prisma/schema.prisma`):
 
 `app/c/[campaignSlug]/[leaderToken]/page.tsx` carga preguntas y pasa props a `FunnelClient`.
 
+### Layout (tema por campaña)
+
+`app/c/[campaignSlug]/[leaderToken]/layout.tsx` aplica variables CSS por campaña usando `Campaign.funnelTheme`. Esto afecta **solo** al embudo público `/c/...` y no altera el tema del dashboard.
+
 ### Cliente (`funnel-client.tsx`)
 
 - Estados de paso: intro, questions, contact, streaming, done.
 - Teléfono: `react-phone-number-input` + validación `isValidPhoneNumber` + `isStrictE164Format`.
+- Correo: campo **opcional** validado por regex (`lib/optional-email.ts`). No hay verificación de unicidad.
 - Streaming: `@ai-sdk/react` `useCompletion` → `POST /api/funnel/stream` con `streamProtocol: "text"`.
 - Geolocalización: `lib/citizen-geolocation.ts` antes de iniciar stream.
+- Privacidad: en el paso de datos, se muestra el mensaje de aceptación y el enlace a `/privacidad` se abre en **nueva pestaña**.
 
 ### API `app/api/funnel/stream/route.ts`
 
 1. `checkFunnelRateLimit`
-2. Validación `bodySchema` (Zod): `campaignSlug`, `leaderToken`, `voter`, `answers`
+2. Validación `bodySchema` (Zod): `campaignSlug`, `leaderToken`, `voter` (incluye `email` opcional), `answers`
 3. Resolución `LeaderProfile` + `Campaign` + preguntas
 4. Completitud de respuestas vs IDs requeridos
 5. `parseToE164`, comprobación duplicado teléfono
