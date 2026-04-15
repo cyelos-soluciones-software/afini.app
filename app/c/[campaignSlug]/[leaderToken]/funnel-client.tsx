@@ -5,6 +5,7 @@
  * @module app/c/[campaignSlug]/[leaderToken]/funnel-client
  */
 import { useCompletion } from "@ai-sdk/react";
+import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-number-input";
@@ -14,6 +15,7 @@ import { TurnstileField } from "@/app/components/turnstile-field";
 import { LinkifyText } from "@/app/components/linkify-text";
 import { requestCitizenGeolocation } from "@/lib/citizen-geolocation";
 import { parseFunnelStreamError } from "@/lib/funnel-stream-error";
+import { parseOptionalEmail } from "@/lib/optional-email";
 import { isStrictE164Format, isValidPhoneNumber } from "@/lib/phone";
 
 const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
@@ -60,6 +62,7 @@ export function FunnelClient({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState<string | undefined>(undefined);
   const [neighborhood, setNeighborhood] = useState("");
+  const [email, setEmail] = useState("");
   const [votingIntention, setVotingIntention] = useState<"YES" | "NO" | "MAYBE" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [phoneBlurred, setPhoneBlurred] = useState(false);
@@ -156,6 +159,11 @@ export function FunnelClient({
       setError("Indica un teléfono válido con código de país (solo dígitos, formato internacional).");
       return;
     }
+    const emailParsed = parseOptionalEmail(email);
+    if (!emailParsed.ok) {
+      setError(emailParsed.message);
+      return;
+    }
     if (turnstileEnabled && !turnstileToken) {
       setError("Completa la verificación de seguridad antes de continuar.");
       return;
@@ -174,6 +182,7 @@ export function FunnelClient({
       phone,
       neighborhood: neighborhood.trim(),
       votingIntention,
+      ...(emailParsed.value ? { email: emailParsed.value } : {}),
       ...(geo ? { latitude: geo.latitude, longitude: geo.longitude } : {}),
     };
 
@@ -357,6 +366,21 @@ export function FunnelClient({
             </p>
           </div>
           <div className="space-y-2">
+            <label className="text-xs font-medium text-[var(--muted)]" htmlFor="funnel-email">
+              Correo electrónico (opcional)
+            </label>
+            <input
+              id="funnel-email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Correo electrónico (opcional)"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none ring-[var(--primary)] focus:ring-2"
+            />
+          </div>
+          <div className="space-y-2">
             <label className="text-xs font-medium text-[var(--muted)]">Barrio o zona</label>
             <input
               value={neighborhood}
@@ -436,6 +460,18 @@ export function FunnelClient({
               {isRequestingGeo ? "Ubicación…" : "Ver conclusión"}
             </button>
           </div>
+          <p className="text-center text-[11px] leading-relaxed text-[var(--muted)]">
+            Al pulsar «Ver conclusión» aceptas la{" "}
+            <Link
+              href="/privacidad"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[var(--primary)] underline underline-offset-2"
+            >
+              política de privacidad de Afini
+            </Link>
+            .
+          </p>
         </section>
       )}
 

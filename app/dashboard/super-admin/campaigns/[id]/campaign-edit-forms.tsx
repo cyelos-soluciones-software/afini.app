@@ -2,6 +2,7 @@
 
 import { useActionState, type ReactNode } from "react";
 import { assignCampaignAdminAction, updateCampaignAction } from "@/app/actions/super-admin";
+import { CampaignFunnelThemeForm } from "@/app/components/campaign-funnel-theme-form";
 import { CampaignMediaUploader } from "@/app/components/campaign-media-uploader";
 import { initialDashboardFormState } from "@/lib/dashboard-form-state";
 
@@ -16,6 +17,7 @@ type Campaign = {
   maxVoters: number;
   bannerUrl: string | null;
   photoUrl: string | null;
+  funnelTheme: unknown;
 };
 
 const fieldClass =
@@ -50,7 +52,8 @@ export function CampaignEditForm({ campaign }: { campaign: Campaign }) {
   );
 
   return (
-    <form action={formAction} className="mt-6 flex max-w-3xl flex-col gap-8">
+    <div className="mt-6 flex max-w-3xl flex-col gap-8">
+    <form action={formAction} className="flex flex-col gap-8">
       <div className="flex flex-col gap-6">
         <FieldGroup label="Nombre" htmlFor="camp-name">
           <input id="camp-name" name="name" required defaultValue={campaign.name} className={fieldClass} />
@@ -166,6 +169,16 @@ export function CampaignEditForm({ campaign }: { campaign: Campaign }) {
         </button>
       </div>
     </form>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-[var(--foreground)]">Colores del embudo ciudadano</h3>
+        <p className="text-xs text-[var(--muted)]">
+          Solo afecta la URL pública <code className="rounded bg-[var(--border)] px-1">/c/…</code>; este panel conserva
+          el tema Afini/Cyelos.
+        </p>
+        <CampaignFunnelThemeForm campaignId={campaign.id} initialTheme={campaign.funnelTheme} />
+      </div>
+    </div>
   );
 }
 
