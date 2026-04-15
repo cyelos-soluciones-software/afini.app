@@ -99,6 +99,8 @@ model Campaign {
   /// Imagen horizontal para el encabezado del funnel (recomendado 1600x600, 8:3). Opcional.
   bannerUrl   String?
   photoUrl    String?
+  /// Colores del embudo público `/c/...` (JSON parcial: hex por rol). Null = tema global del sitio.
+  funnelTheme Json?
   creatorId   String?
   creator     User?    @relation("CampaignCreator", fields: [creatorId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
@@ -169,6 +171,8 @@ model Voter {
   campaignId      String
   name            String
   phone           String
+  /// Correo opcional del ciudadano en el funnel; no se valida unicidad por campaña.
+  email           String?
   neighborhood    String
   votingIntention VotingIntention
   /// WGS84; null si el ciudadano denegó o el navegador no soporta geolocalización.

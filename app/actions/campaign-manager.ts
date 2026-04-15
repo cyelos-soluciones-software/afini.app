@@ -8,12 +8,14 @@
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { canViewCampaignHeatmap, hasCampaignAccess } from "@/lib/authz";
 import type { DashboardActionState } from "@/lib/dashboard-form-state";
 import { buildLeaderInviteCopy } from "@/lib/leader-invite";
 import { leaderDisplayLabel } from "@/lib/leader-display";
+import { FUNNEL_THEME_FORM_FIELDS, parseFunnelThemeFromForm, parseThemeColor } from "@/lib/funnel-theme";
 import { campaignHasPremiumVoterBudget } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 
@@ -639,5 +641,73 @@ export async function updateCampaignMediaAction(
 
   revalidatePath(`/dashboard/campaign-admin/${campaignId}`);
   revalidatePath(`/dashboard/campaign-admin/${campaignId}/mapa`);
+  return { error: null };
+}
+
+/**
+ * Revalida rutas públicas del embudo para reflejar tema u otros cambios de campaña.
+ * @internal
+ */
+async function revalidateCampaignFunnelRoutes(campaignId: string) {
+  const c = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: {
+      slug: true,
+      leaders: { select: { uniqueUrlToken: true } },
+    },
+  });
+  if (!c) return;
+  for (const l of c.leaders) {
+    revalidatePath(`/c/${c.slug}/${l.uniqueUrlToken}`);
+  }
+}
+
+/**
+ * Guarda colores opcionales del embudo `/c/...` (solo súper admin o admin de campaña).
+ */
+export async function updateCampaignFunnelThemeAction(
+  campaignId: string,
+  _prevState: DashboardActionState,
+  formData: FormData,
+): Promise<DashboardActionState> {
+  const session = await requireCampaignContext(campaignId);
+  if (session.user.role !== "SUPER_ADMIN" && session.user.role !== "CAMPAIGN_ADMIN") {
+    return { error: "No tienes permiso para cambiar el tema del embudo." };
+  }
+
+  const reset = String(formData.get("resetTheme") ?? "") === "1";
+  if (!reset) {
+    for (const { formName } of FUNNEL_THEME_FORM_FIELDS) {
+      const raw = String(formData.get(formName) ?? "").trim();
+      if (!raw) continue;
+      if (!parseThemeColor(raw)) {
+        return {
+          error:
+            "Hay al menos un color no válido. Usa solo formato hex (#RGB, #RRGGBB o #RRGGBBAA) o deja el campo vacío.",
+        };
+      }
+    }
+  }
+  const theme = reset ? null : parseFunnelThemeFromForm(formData);
+
+  await prisma.campaign.update({
+    where: { id: campaignId },
+    data: {
+      funnelTheme: reset || theme == null ? Prisma.DbNull : (theme as Prisma.InputJsonValue),
+    },
+  });
+
+  await writeAuditLog({
+    userId: session.user.id,
+    email: session.user.email,
+    action: "campaign_funnel_theme_update",
+    entity: "Campaign",
+    entityId: campaignId,
+    metadata: { reset },
+  });
+
+  revalidatePath(`/dashboard/campaign-admin/${campaignId}`);
+  revalidatePath(`/dashboard/super-admin/campaigns/${campaignId}`);
+  await revalidateCampaignFunnelRoutes(campaignId);
   return { error: null };
 }
