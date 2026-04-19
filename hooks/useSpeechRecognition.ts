@@ -84,6 +84,10 @@ function parseSpeechRecognitionError(event: SpeechRecognitionErrorEvent): string
   }
 }
 
+function normalizeTranscript(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
 export type UseSpeechRecognitionResult = {
   supported: boolean;
   isListening: boolean;
@@ -105,7 +109,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionResult {
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const isListeningRef = useRef(false);
-  const finalTranscriptRef = useRef("");
 
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -127,7 +130,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionResult {
   }, []);
 
   const clearTranscript = useCallback(() => {
-    finalTranscriptRef.current = "";
     setTranscript("");
   }, []);
 
@@ -145,16 +147,18 @@ export function useSpeechRecognition(): UseSpeechRecognitionResult {
     recognition.interimResults = true;
 
     recognition.onresult = (event) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      // Algunos navegadores (notablemente Chrome Android) repiten resultados previos.
+      // Para evitar duplicaciones, reconstruimos el texto completo en cada evento.
+      let finalText = "";
+      let interimText = "";
+      for (let i = 0; i < event.results.length; i += 1) {
         const result = event.results[i];
         const text = result[0]?.transcript ?? "";
         if (!text) continue;
-        if (result.isFinal) finalTranscriptRef.current += text;
-        else interim += text;
+        if (result.isFinal) finalText += text;
+        else interimText += text;
       }
-      const full = `${finalTranscriptRef.current}${interim}`.trim();
-      setTranscript(full);
+      setTranscript(normalizeTranscript(`${finalText} ${interimText}`));
     };
 
     recognition.onerror = (ev) => {
