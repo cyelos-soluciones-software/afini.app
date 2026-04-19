@@ -6,6 +6,7 @@ import { generateObject, streamText } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import { waitUntil } from "@vercel/functions";
 import { writeAuditLog } from "@/lib/audit";
 import { getGeminiApiKey, getGeminiModel, getGeminiModelId } from "@/lib/ai/gemini";
 import { buildFunnelUserPrompt } from "@/lib/funnel/build-user-prompt";
@@ -16,6 +17,36 @@ import { checkFunnelRateLimit } from "@/lib/rate-limit";
 import { campaignHasPremiumVoterBudget } from "@/lib/plan-limits";
 import { parseOptionalEmail } from "@/lib/optional-email";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { sendAffinityEmail } from "@/lib/email-service";
+
+function extractCampaignLinks(text: string | null | undefined): { vakiUrl?: string; storeUrl?: string } {
+  const raw = (text ?? "").trim();
+  if (!raw) return {};
+
+  const urls = raw.match(/https?:\/\/[^\s)]+/gi) ?? [];
+  if (urls.length === 0) return {};
+
+  const vaki =
+    urls.find((u) => /vaki/i.test(u)) ??
+    urls.find((u) => /don(a|á)|apoy|contrib/i.test(u)) ??
+    undefined;
+  const store =
+    urls.find((u) => /tienda|shop|store|souvenir/i.test(u)) ??
+    urls.find((u) => u !== vaki) ??
+    undefined;
+
+  return { ...(vaki ? { vakiUrl: vaki } : {}), ...(store ? { storeUrl: store } : {}) };
+}
+
+function scheduleBackground(promise: Promise<unknown>) {
+  try {
+    waitUntil(promise);
+  } catch (e) {
+    // En local o fuera de Vercel, `waitUntil` puede no estar disponible.
+    console.warn("[funnel/email] waitUntil no disponible; enviando en background sin waitUntil", e);
+    void promise;
+  }
+}
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -315,6 +346,41 @@ ${citizenSummary}`,
             },
           },
         });
+
+        const citizenEmail = (voterNormalized.email ?? "").trim();
+        if (citizenEmail) {
+          const links = extractCampaignLinks(leaderRef.campaign.closingCtaText);
+          console.info("[funnel/email] programando envío", {
+            campaignId: leaderRef.campaignId,
+            hasVaki: Boolean(links.vakiUrl),
+          });
+          scheduleBackground(
+            sendAffinityEmail({
+              to: citizenEmail,
+              userName: voterNormalized.name,
+              affinityScore,
+              sentiment,
+              aiConclusion: conclusion,
+              campaign: {
+                name: leaderRef.campaign.name,
+                slogan: leaderRef.campaign.slogan ?? null,
+                description: leaderRef.campaign.description ?? null,
+                bannerUrl: leaderRef.campaign.bannerUrl ?? null,
+                photoUrl: leaderRef.campaign.photoUrl ?? null,
+                closingCtaText: leaderRef.campaign.closingCtaText ?? null,
+                funnelTheme: leaderRef.campaign.funnelTheme,
+              },
+              campaignLinks: links,
+            })
+              .then((res) => {
+                console.info("[funnel/email] resultado Resend", res);
+              })
+              .catch((e) => {
+                console.error("[funnel/email] sendAffinityEmail failed", e);
+              }),
+          );
+        }
+
         await writeAuditLog({
           action: "funnel_voter_created",
           entity: "Campaign",
