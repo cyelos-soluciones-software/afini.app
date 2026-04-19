@@ -88,6 +88,32 @@ function normalizeTranscript(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+function appendWithOverlap(acc: string, nextRaw: string): string {
+  const next = normalizeTranscript(nextRaw);
+  if (!next) return acc;
+  if (!acc) return next;
+
+  const a = acc;
+  const b = next;
+
+  // Caso común en Chrome Android: el siguiente resultado es la frase completa acumulada.
+  // Si b incluye a completo, usamos b.
+  if (b.toLocaleLowerCase().startsWith(a.toLocaleLowerCase())) return b;
+
+  // Busca el mayor solape donde el final de `a` coincide con el inicio de `b`.
+  const aLower = a.toLocaleLowerCase();
+  const bLower = b.toLocaleLowerCase();
+  const max = Math.min(aLower.length, bLower.length);
+  for (let k = max; k >= 1; k -= 1) {
+    if (aLower.endsWith(bLower.slice(0, k))) {
+      const remainder = b.slice(k);
+      return normalizeTranscript(`${a} ${remainder}`);
+    }
+  }
+
+  return normalizeTranscript(`${a} ${b}`);
+}
+
 export type UseSpeechRecognitionResult = {
   supported: boolean;
   isListening: boolean;
@@ -148,15 +174,15 @@ export function useSpeechRecognition(): UseSpeechRecognitionResult {
 
     recognition.onresult = (event) => {
       // Algunos navegadores (notablemente Chrome Android) repiten resultados previos.
-      // Para evitar duplicaciones, reconstruimos el texto completo en cada evento.
+      // Para evitar duplicaciones, unimos los segmentos eliminando solapes.
       let finalText = "";
       let interimText = "";
       for (let i = 0; i < event.results.length; i += 1) {
         const result = event.results[i];
         const text = result[0]?.transcript ?? "";
         if (!text) continue;
-        if (result.isFinal) finalText += text;
-        else interimText += text;
+        if (result.isFinal) finalText = appendWithOverlap(finalText, text);
+        else interimText = appendWithOverlap(interimText, text);
       }
       setTranscript(normalizeTranscript(`${finalText} ${interimText}`));
     };
