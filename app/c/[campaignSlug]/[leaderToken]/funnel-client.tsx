@@ -7,12 +7,14 @@
 import { useCompletion } from "@ai-sdk/react";
 import Link from "next/link";
 import Script from "next/script";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PhoneInput from "react-phone-number-input";
 import es from "react-phone-number-input/locale/es.json";
+import { Mic, Square } from "lucide-react";
 import { CampaignShareButtons } from "@/app/components/campaign-share-buttons";
 import { TurnstileField } from "@/app/components/turnstile-field";
 import { LinkifyText } from "@/app/components/linkify-text";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { requestCitizenGeolocation } from "@/lib/citizen-geolocation";
 import { parseFunnelStreamError } from "@/lib/funnel-stream-error";
 import { parseOptionalEmail } from "@/lib/optional-email";
@@ -65,11 +67,15 @@ export function FunnelClient({
   const [email, setEmail] = useState("");
   const [votingIntention, setVotingIntention] = useState<"YES" | "NO" | "MAYBE" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [speechError, setSpeechError] = useState<string | null>(null);
   const [phoneBlurred, setPhoneBlurred] = useState(false);
   const [isRequestingGeo, setIsRequestingGeo] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileScriptReady, setTurnstileScriptReady] = useState(false);
   const [turnstileMountKey, setTurnstileMountKey] = useState(0);
+
+  const speech = useSpeechRecognition();
+  const speechBaseAnswerRef = useRef("");
 
   useEffect(() => {
     if (!turnstileEnabled || typeof window === "undefined") return;
@@ -146,6 +152,36 @@ export function FunnelClient({
     if (!currentQuestion) return;
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: text }));
   }
+
+  useEffect(() => {
+    if (speech.error) setSpeechError(speech.error);
+  }, [speech.error]);
+
+  useEffect(() => {
+    if (step !== "questions") {
+      if (speech.isListening) speech.stopListening();
+      speech.clearTranscript();
+      return;
+    }
+    // Si cambia la pregunta, detenemos dictado para no mezclar respuestas entre preguntas.
+    if (speech.isListening) speech.stopListening();
+    speech.clearTranscript();
+    setSpeechError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, qIndex]);
+
+  useEffect(() => {
+    if (step !== "questions") return;
+    if (!currentQuestion) return;
+    if (!speech.isListening) return;
+
+    const base = speechBaseAnswerRef.current;
+    const next = speech.transcript.trim()
+      ? `${base}${base.trim().length ? " " : ""}${speech.transcript.trim()}`
+      : base;
+    onAnswerChange(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speech.transcript, speech.isListening, step, currentQuestion?.id]);
 
   /**
    * Valida intención y teléfono, pide ubicación al navegador, cambia a paso streaming y llama a `complete`.
@@ -284,12 +320,46 @@ export function FunnelClient({
           <label className="text-xs font-medium text-[var(--muted)]">Tu respuesta</label>
           <textarea
             value={answers[currentQuestion.id] ?? ""}
-            onChange={(e) => onAnswerChange(e.target.value)}
+            onChange={(e) => {
+              setSpeechError(null);
+              onAnswerChange(e.target.value);
+            }}
             rows={5}
             placeholder="Escribe con tus palabras…"
             className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none ring-[var(--primary)] focus:ring-2"
           />
-          <div className="mt-auto flex gap-2 pt-4">
+          {speechError ? (
+            <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+              {speechError}
+            </p>
+          ) : null}
+          {speech.supported ? (
+            <div className="flex justify-center -mb-6 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSpeechError(null);
+                    if (speech.isListening) {
+                      speech.stopListening();
+                      speech.clearTranscript();
+                      return;
+                    }
+                    speechBaseAnswerRef.current = answers[currentQuestion.id] ?? "";
+                    speech.startListening();
+                  }}
+                  aria-pressed={speech.isListening}
+                  aria-label={speech.isListening ? "Detener dictado por voz" : "Iniciar dictado por voz"}
+                  className={`inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-sm transition ${
+                    speech.isListening
+                      ? "border-red-400 bg-red-50 text-red-700 animate-pulse"
+                      : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--border)]/40"
+                  }`}
+                >
+                  {speech.isListening ? <Square className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                </button>
+            </div>
+          ) : null}
+          <div className={`flex gap-2 ${speech.supported ? "pt-8" : "pt-4"}`}>
             {qIndex > 0 ? (
               <button
                 type="button"
