@@ -47,6 +47,7 @@ Entidades principales (ver `prisma/schema.prisma`):
 - Streaming: `@ai-sdk/react` `useCompletion` → `POST /api/funnel/stream` con `streamProtocol: "text"`.
 - Geolocalización: `lib/citizen-geolocation.ts` antes de iniciar stream.
 - Privacidad: en el paso de datos, se muestra el mensaje de aceptación y el enlace a `/privacidad` se abre en **nueva pestaña**.
+- Dictado por voz: botón circular de micrófono (solo si hay soporte Web Speech API) para transcribir a texto en preguntas.
 
 ### API `app/api/funnel/stream/route.ts`
 

@@ -36,6 +36,15 @@ Abre [http://localhost:3000](http://localhost:3000). Usuarios de prueba tras el 
 
 En el funnel (`/c/...`) el ciudadano diligencia datos de contacto (incluye **correo opcional**). Los colores del embudo se pueden configurar **por campaña** desde el panel (sección “Colores del embudo ciudadano”).
 
+### Dictado por voz (Web Speech API)
+
+En el paso de **preguntas** del funnel (`/c/...`), el ciudadano puede responder usando **dictado por voz** en navegadores compatibles (Web Speech API):
+
+- Se muestra un **botón circular de micrófono** sobre el botón “Siguiente/Continuar”.
+- Solo aparece si el navegador soporta `SpeechRecognition`/`webkitSpeechRecognition`. Si no hay soporte, el funnel funciona normal sin mostrar el botón.
+- Idioma configurado: `es-CO` con resultados interinos (el texto aparece mientras se habla).
+- Puede requerir permiso de micrófono del navegador; si se deniega, se muestra un mensaje de error.
+
 ## Scripts npm
 
 | Script | Descripción |
