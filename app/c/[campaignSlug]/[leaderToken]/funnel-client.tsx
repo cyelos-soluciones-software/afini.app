@@ -14,6 +14,7 @@ import { Mic, Square } from "lucide-react";
 import { CampaignShareButtons } from "@/app/components/campaign-share-buttons";
 import { TurnstileField } from "@/app/components/turnstile-field";
 import { LinkifyText } from "@/app/components/linkify-text";
+import { TextToSpeechButton } from "@/components/TextToSpeechButton";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { requestCitizenGeolocation } from "@/lib/citizen-geolocation";
 import { parseFunnelStreamError } from "@/lib/funnel-stream-error";
@@ -587,6 +588,7 @@ export function FunnelClient({
       {step === "done" && (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-[var(--foreground)]">Gracias por participar</h2>
+          <TextToSpeechButton text={completion} />
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed text-[var(--foreground)] whitespace-pre-wrap">
             {completion}
           </div>

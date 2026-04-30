@@ -80,6 +80,15 @@ En el paso de preguntas del funnel (`app/c/[campaignSlug]/[leaderToken]/funnel-c
 - **Idioma**: `es-CO`, `continuous: true`, `interimResults: true`.
 - **Código**: hook `hooks/useSpeechRecognition.ts`.
 
+### Lectura de conclusión por voz (Text-to-Speech)
+
+En el paso final del funnel (pantalla de “Gracias por participar”) hay un botón opcional para **leer la conclusión IA en voz alta** usando Web Speech API:
+
+- **Compatibilidad**: usa `window.speechSynthesis` + `SpeechSynthesisUtterance` (si no hay soporte, no se renderiza).
+- **Dónde vive**: `components/TextToSpeechButton.tsx`.
+- **Lógica**: hook `hooks/useTextToSpeech.ts` (sin autoplay; `speak/pause/resume/stop`, selección de voz `es-CO`/`es-ES`/`es-MX`, cleanup `cancel()` en unmount).
+- **Integración**: `app/c/[campaignSlug]/[leaderToken]/funnel-client.tsx` (justo encima del bloque `{completion}`).
+
 ### Apariencia por campaña (solo funnel `/c/...`)
 
 - **Tema configurable por campaña**: `Campaign.funnelTheme` (JSON) permite sobrescribir variables CSS (`--background`, `--foreground`, `--muted`, `--border`, `--surface`, `--primary`, `--primary-foreground`) **solo** en el embudo público.
